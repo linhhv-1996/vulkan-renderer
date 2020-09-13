@@ -46,11 +46,10 @@ void VulkanRenderer::setup_frame_graph() {
         cmd_buf.draw_indexed(m_octree_indices.size());
     });
 
+    main_stage.add_descriptor_layout(m_descriptors[0].descriptor_set_layout());
     for (const auto &shader : m_shaders) {
         main_stage.uses_shader(shader);
     }
-
-    main_stage.add_descriptor_layout(m_descriptors[0].descriptor_set_layout());
     m_frame_graph->compile(back_buffer);
 }
 

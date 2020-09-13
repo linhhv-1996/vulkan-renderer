@@ -174,6 +174,9 @@ private:
     std::vector<VkDescriptorSetLayout> m_descriptor_layouts;
     std::function<void(const class PhysicalStage *, const wrapper::CommandBuffer &)> m_on_record;
 
+    bool m_dynamic{false};
+    std::function<bool()> m_should_record{[] { return true; }};
+
 protected:
     explicit RenderStage(std::string name) : m_name(std::move(name)) {}
 
@@ -203,6 +206,17 @@ public:
     ///          common use for this is for draw commands.
     void set_on_record(std::function<void(const class PhysicalStage *, const wrapper::CommandBuffer &)> on_record) {
         m_on_record = std::move(on_record);
+    }
+
+    /// @brief Specifies that the command buffers for this stage should be re-recorded every frame.
+    void set_dynamic(bool dynamic) {
+        m_dynamic = dynamic;
+    }
+
+    /// @brief Specifies a function that will be called to check whether the stage's command buffers should be
+    ///        re-recorded.
+    void set_should_record(std::function<bool()> should_record) {
+        m_should_record = std::move(should_record);
     }
 };
 
@@ -404,7 +418,7 @@ private:
     // Functions for building stage related vulkan objects.
     void alloc_command_buffers(const RenderStage *, PhysicalStage *) const;
     void build_pipeline_layout(const RenderStage *, PhysicalStage *) const;
-    void record_command_buffers(const RenderStage *, PhysicalStage *) const;
+    void record_command_buffer(const RenderStage *, PhysicalStage *, int image_index) const;
 
     // Functions for building graphics stage related vulkan objects.
     void build_render_pass(const GraphicsStage *, PhysicalGraphicsStage *) const;

@@ -129,61 +129,59 @@ void FrameGraph::build_pipeline_layout(const RenderStage *stage, PhysicalStage *
                                    stage->m_name + " pipeline layout");
 }
 
-void FrameGraph::record_command_buffers(const RenderStage *stage, PhysicalStage *phys) const {
-    for (std::size_t i = 0; i < phys->m_command_buffers.size(); i++) {
-        // TODO: Remove simultaneous usage once we have proper max frames in flight control.
-        auto &cmd_buf = phys->m_command_buffers[i];
-        cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+void FrameGraph::record_command_buffer(const RenderStage *stage, PhysicalStage *phys, int image_index) const {
+    // TODO: Remove simultaneous usage once we have proper max frames in flight control.
+    auto &cmd_buf = phys->m_command_buffers[image_index];
+    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
-        // Record render pass for graphics stages.
-        const auto *graphics_stage = stage->as<GraphicsStage>();
-        if (graphics_stage != nullptr) {
-            const auto *phys_graphics_stage = phys->as<PhysicalGraphicsStage>();
-            assert(phys_graphics_stage != nullptr);
+    // Record render pass for graphics stages.
+    const auto *graphics_stage = stage->as<GraphicsStage>();
+    if (graphics_stage != nullptr) {
+        const auto *phys_graphics_stage = phys->as<PhysicalGraphicsStage>();
+        assert(phys_graphics_stage != nullptr);
 
-            auto render_pass_bi = wrapper::make_info<VkRenderPassBeginInfo>();
-            std::array<VkClearValue, 2> clear_values{};
-            if (graphics_stage->m_clears_screen) {
-                clear_values[0].color = {0, 0, 0, 0};
-                clear_values[1].depthStencil = {1.0F, 0};
-                render_pass_bi.clearValueCount = static_cast<std::uint32_t>(clear_values.size());
-                render_pass_bi.pClearValues = clear_values.data();
-            }
-            render_pass_bi.framebuffer = phys_graphics_stage->m_framebuffers[i].get();
-            render_pass_bi.renderArea.extent = m_swapchain.extent();
-            render_pass_bi.renderPass = phys_graphics_stage->m_render_pass;
-            cmd_buf.begin_render_pass(render_pass_bi);
+        auto render_pass_bi = wrapper::make_info<VkRenderPassBeginInfo>();
+        std::array<VkClearValue, 2> clear_values{};
+        if (graphics_stage->m_clears_screen) {
+            clear_values[0].color = {0, 0, 0, 0};
+            clear_values[1].depthStencil = {1.0F, 0};
+            render_pass_bi.clearValueCount = static_cast<std::uint32_t>(clear_values.size());
+            render_pass_bi.pClearValues = clear_values.data();
         }
-
-        std::vector<VkBuffer> vertex_buffers;
-        for (const auto *resource : stage->m_reads) {
-            const auto *buffer_resource = resource->as<BufferResource>();
-            if (buffer_resource == nullptr) {
-                continue;
-            }
-
-            const auto *phys_buffer = m_resource_map.at(resource)->as<PhysicalBuffer>();
-            assert(phys_buffer != nullptr);
-
-            if (buffer_resource->m_usage == BufferUsage::INDEX_BUFFER) {
-                cmd_buf.bind_index_buffer(phys_buffer->m_buffer);
-            } else if (buffer_resource->m_usage == BufferUsage::VERTEX_BUFFER) {
-                vertex_buffers.push_back(phys_buffer->m_buffer);
-            }
-        }
-
-        if (!vertex_buffers.empty()) {
-            cmd_buf.bind_vertex_buffers(vertex_buffers);
-        }
-
-        cmd_buf.bind_graphics_pipeline(phys->m_pipeline);
-        stage->m_on_record(phys, cmd_buf);
-
-        if (graphics_stage != nullptr) {
-            cmd_buf.end_render_pass();
-        }
-        cmd_buf.end();
+        render_pass_bi.framebuffer = phys_graphics_stage->m_framebuffers[image_index].get();
+        render_pass_bi.renderArea.extent = m_swapchain.extent();
+        render_pass_bi.renderPass = phys_graphics_stage->m_render_pass;
+        cmd_buf.begin_render_pass(render_pass_bi);
     }
+
+    std::vector<VkBuffer> vertex_buffers;
+    for (const auto *resource : stage->m_reads) {
+        const auto *buffer_resource = resource->as<BufferResource>();
+        if (buffer_resource == nullptr) {
+            continue;
+        }
+
+        const auto *phys_buffer = m_resource_map.at(resource)->as<PhysicalBuffer>();
+        assert(phys_buffer != nullptr);
+
+        if (buffer_resource->m_usage == BufferUsage::INDEX_BUFFER) {
+            cmd_buf.bind_index_buffer(phys_buffer->m_buffer);
+        } else if (buffer_resource->m_usage == BufferUsage::VERTEX_BUFFER) {
+            vertex_buffers.push_back(phys_buffer->m_buffer);
+        }
+    }
+
+    if (!vertex_buffers.empty()) {
+        cmd_buf.bind_vertex_buffers(vertex_buffers);
+    }
+
+    cmd_buf.bind_graphics_pipeline(phys->m_pipeline);
+    stage->m_on_record(phys, cmd_buf);
+
+    if (graphics_stage != nullptr) {
+        cmd_buf.end_render_pass();
+    }
+    cmd_buf.end();
 }
 
 void FrameGraph::build_render_pass(const GraphicsStage *stage, PhysicalGraphicsStage *phys) const {
@@ -500,11 +498,16 @@ void FrameGraph::compile(const RenderResource &target) {
         }
     }
 
-    // Allocate and record command buffers.
+    // Allocate and record command buffers for static stages.
     for (const auto *stage : m_stage_stack) {
-        auto *phys = m_stage_map[stage].get();
-        alloc_command_buffers(stage, phys);
-        record_command_buffers(stage, phys);
+        auto &phys = *m_stage_map.at(stage);
+        alloc_command_buffers(stage, &phys);
+        if (stage->m_dynamic) {
+            continue;
+        }
+        for (int i = 0; i < m_swapchain.image_count(); i++) {
+            record_command_buffer(stage, &phys, i);
+        }
     }
 }
 
@@ -519,6 +522,14 @@ void FrameGraph::render(int image_index, VkSemaphore signal_semaphore, VkSemapho
 
     std::array<VkPipelineStageFlags, 1> wait_stage_mask = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submit_info.pWaitDstStageMask = wait_stage_mask.data();
+
+    for (const auto *stage : m_stage_stack) {
+        if (!stage->m_dynamic || !stage->m_should_record()) {
+            continue;
+        }
+        auto &phys = *m_stage_map.at(stage);
+        record_command_buffer(stage, &phys, image_index);
+    }
 
     // TODO: Batch submit infos.
     for (const auto *stage : m_phys_stage_stack) {
