@@ -237,7 +237,7 @@ void FrameGraph::build_render_pass(const GraphicsStage *stage, PhysicalGraphicsS
     VkSubpassDescription subpass_description{};
     subpass_description.colorAttachmentCount = static_cast<std::uint32_t>(colour_refs.size());
     subpass_description.pColorAttachments = colour_refs.data();
-    subpass_description.pDepthStencilAttachment = depth_refs.data();
+    subpass_description.pDepthStencilAttachment = !depth_refs.empty() ? depth_refs.data() : nullptr;
     subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     auto render_pass_ci = wrapper::make_info<VkRenderPassCreateInfo>();
