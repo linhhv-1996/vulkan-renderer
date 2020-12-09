@@ -105,12 +105,12 @@ public:
     /// @param commandBuffer
     /// @param pipelineLayout
     /// @param node
-    void draw_node(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, std::shared_ptr<ModelNode> node);
+    void draw_node(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, std::shared_ptr<ModelNode> node);
 
     /// @brief Draw the glTF scene starting at the top-level-nodes.
     /// @param commandBuffer
     /// @param pipelineLayout
-    void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+    void draw(VkCommandBuffer cmd_buffer, VkPipelineLayout layout);
 };
 
 }; // namespace inexor::vulkan_renderer::gltf2

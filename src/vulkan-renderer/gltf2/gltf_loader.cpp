@@ -133,6 +133,7 @@ void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &in
             uint32_t firstIndex = static_cast<uint32_t>(indexBuffer.size());
             uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
             uint32_t indexCount = 0;
+
             // Vertices
             {
                 const float *positionBuffer = nullptr;
@@ -178,6 +179,7 @@ void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &in
                     vertexBuffer.push_back(vert);
                 }
             }
+
             // Indices
             {
                 const tinygltf::Accessor &accessor = input.accessors[glTFPrimitive.indices];
@@ -243,7 +245,7 @@ void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &in
     }
 }
 
-void Model::draw_node(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, std::shared_ptr<ModelNode> node) {
+void Model::draw_node(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, std::shared_ptr<ModelNode> node) {
     if (node->mesh.primitives.size() > 0) {
         // Pass the node's matrix via push constants
         // Traverse the node hierarchy to the top-most parent to get the final matrix of the current node
@@ -256,8 +258,7 @@ void Model::draw_node(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLa
         }
 
         // Pass the final matrix to the vertex shader using push constants
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
-                           &nodeMatrix);
+        vkCmdPushConstants(cmd_buffer, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
 
         for (ModelPrimitive &primitive : node->mesh.primitives) {
             if (primitive.index_count > 0) {
@@ -273,28 +274,28 @@ void Model::draw_node(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLa
 
                 // TODO: Fix this!
 
-                vkCmdDrawIndexed(commandBuffer, primitive.index_count, 1, primitive.first_index, 0, 0);
+                vkCmdDrawIndexed(cmd_buffer, primitive.index_count, 1, primitive.first_index, 0, 0);
             }
         }
     }
     for (auto &child : node->children) {
-        draw_node(commandBuffer, pipelineLayout, child);
+        draw_node(cmd_buffer, layout, child);
     }
 }
 
-void Model::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout) {
+void Model::draw(VkCommandBuffer cmd_buffer, VkPipelineLayout layout) {
     // All vertices and indices are stored in single buffers, so we only need to bind once
     VkDeviceSize offsets[1] = {0};
 
     const auto &vertex_buffer = m_model_mesh->get_vertex_buffer();
     const auto &index_buffer = m_model_mesh->get_index_buffer();
 
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertex_buffer, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vertex_buffer, offsets);
+    vkCmdBindIndexBuffer(cmd_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
     // Render all nodes at top-level
     for (auto &node : m_model_nodes) {
-        draw_node(commandBuffer, pipelineLayout, node);
+        draw_node(cmd_buffer, layout, node);
     }
 }
 
