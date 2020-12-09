@@ -189,29 +189,35 @@ void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &in
                 // glTF supports different component types of indices.
                 switch (accessor.componentType) {
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-                    uint32_t *buf = new uint32_t[accessor.count];
-                    memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                           accessor.count * sizeof(uint32_t));
+                    std::vector<std::uint32_t> added_indices(accessor.count);
+
+                    std::memcpy(added_indices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset],
+                                accessor.count * sizeof(uint32_t));
+
                     for (size_t index = 0; index < accessor.count; index++) {
-                        indexBuffer.push_back(buf[index] + vertexStart);
+                        indexBuffer.push_back(added_indices[index] + vertexStart);
                     }
                     break;
                 }
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-                    uint16_t *buf = new uint16_t[accessor.count];
-                    memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                           accessor.count * sizeof(uint16_t));
+                    std::vector<std::uint16_t> added_indices(accessor.count);
+
+                    std::memcpy(added_indices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset],
+                                accessor.count * sizeof(uint16_t));
+
                     for (size_t index = 0; index < accessor.count; index++) {
-                        indexBuffer.push_back(buf[index] + vertexStart);
+                        indexBuffer.push_back(added_indices[index] + vertexStart);
                     }
                     break;
                 }
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-                    uint8_t *buf = new uint8_t[accessor.count];
-                    memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                           accessor.count * sizeof(uint8_t));
+                    std::vector<std::uint8_t> added_indices(accessor.count);
+
+                    std::memcpy(added_indices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset],
+                                accessor.count * sizeof(uint8_t));
+
                     for (size_t index = 0; index < accessor.count; index++) {
-                        indexBuffer.push_back(buf[index] + vertexStart);
+                        indexBuffer.push_back(added_indices[index] + vertexStart);
                     }
                     break;
                 }
