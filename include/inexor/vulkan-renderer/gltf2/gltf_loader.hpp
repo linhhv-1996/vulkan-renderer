@@ -16,9 +16,13 @@
 #include <string>
 #include <vector>
 
-namespace inexor::vulkan_renderer::gltf2 {
+namespace inexor::vulkan_renderer::wrapper {
 
-class inexor::vulkan_renderer::wrapper::Device;
+class Device;
+
+};
+
+namespace inexor::vulkan_renderer::gltf2 {
 
 /// @brief A wrapper for loading glTF2 models.
 class Model {
