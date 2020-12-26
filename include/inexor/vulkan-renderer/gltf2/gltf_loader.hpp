@@ -27,7 +27,6 @@ class Model {
     std::string m_name;
     std::string m_file_name;
     tinygltf::Model m_gltf_model;
-    std::unique_ptr<wrapper::MeshBuffer> m_model_mesh{};
 
     /// @brief  TODO: Name consistently!!!! !
 
@@ -47,6 +46,8 @@ class Model {
         glm::vec3 normal{0.0f, 0.0f, 0.0f};
         glm::vec2 uv{0.0f, 0.0f};
     };
+
+    std::unique_ptr<wrapper::MeshBuffer<ModelVertex>> m_model_mesh{};
 
     std::vector<std::int32_t> m_texture_indices;
     std::vector<Material> m_materials;
