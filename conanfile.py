@@ -18,6 +18,7 @@ class InexorConan(ConanFile):
         "stb/20200203",
         "tinygltf/2.2.0",
         "toml11/3.4.0",
+		"taskflow/2.7.0",
     )
 
     options = {
