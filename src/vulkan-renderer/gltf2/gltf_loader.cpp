@@ -1,10 +1,16 @@
 #include "inexor/vulkan-renderer/gltf2/gltf_loader.hpp"
+
+#include "inexor/vulkan-renderer/wrapper/descriptor.hpp"
+#include "inexor/vulkan-renderer/wrapper/descriptor_builder.hpp"
+
 #include <glm/gtc/type_ptr.hpp>
 
 namespace inexor::vulkan_renderer::gltf2 {
 
-Model::Model(const wrapper::Device &device, std::string &file_name, std::string &model_name)
-    : m_device(device), m_name(model_name), m_file_name(file_name) {
+Model::Model(const wrapper::Device &device, std::uint32_t swapchain_image_count, std::string &file_name,
+             std::string &model_name)
+    : m_device(device), m_swapchain_image_count(swapchain_image_count), m_model_name(model_name),
+      m_file_name(file_name) {
     tinygltf::TinyGLTF gltf_context;
 
     std::string gltf_loader_error = "";
@@ -25,10 +31,9 @@ Model::Model(const wrapper::Device &device, std::string &file_name, std::string 
         load_node(m_gltf_model.nodes[scene.nodes[i]], m_gltf_model, nullptr, m_index_data, m_vertex_data);
     }
 
-    // TODO: Implement!
     setup_descriptor_sets();
 
-    // TODO: Create mesh buffer!
+    create_mesh_buffer();
 }
 
 Model::~Model() {}
@@ -96,7 +101,6 @@ void Model::load_materials() {
 
 void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &input, std::shared_ptr<ModelNode> parent,
                       std::vector<uint32_t> &indexBuffer, std::vector<ModelVertex> &vertexBuffer) {
-
     std::shared_ptr<ModelNode> node = std::make_shared<ModelNode>();
     node->matrix = glm::mat4(1.0f);
 
@@ -243,6 +247,37 @@ void Model::load_node(const tinygltf::Node &inputNode, const tinygltf::Model &in
     } else {
         m_model_nodes.push_back(node);
     }
+}
+
+void Model::setup_descriptor_sets() {
+    spdlog::debug("Setting up descriptor sets.");
+
+    m_uniform_buffers.emplace_back(m_device, "model matrices uniform buffer", sizeof(ModelMatrixUBO));
+
+    wrapper::DescriptorBuilder builder(m_device, m_swapchain_image_count);
+
+    std::string model_descriptor_name = "Descriptor for glTF model " + m_model_name;
+
+    const auto number_of_textures = m_textures.size();
+
+    // Gather parameters for descriptor builder.
+    // It's important to pass the number of textures to the constructors to pre-allocate the required memory.
+    std::vector<VkSampler> texture_images_sampler(number_of_textures);
+    std::vector<VkImageView> texture_image_views(number_of_textures);
+
+    for (const auto &texture : m_textures) {
+        texture_images_sampler.emplace_back(texture.sampler());
+        texture_image_views.emplace_back(texture.image_view());
+    }
+
+    const std::vector<std::uint32_t> texture_bindings(number_of_textures, 0);
+    const std::vector<VkShaderStageFlagBits> texture_stage_flags(number_of_textures, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    m_descriptors.emplace_back(
+        builder.add_uniform_buffer<ModelMatrixUBO>(m_uniform_buffers[0].buffer(), 0, VK_SHADER_STAGE_VERTEX_BIT)
+            .add_combined_image_sampler_array(texture_images_sampler, texture_image_views, texture_bindings,
+                                              texture_stage_flags)
+            .build(model_descriptor_name));
 }
 
 void Model::draw_node(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, std::shared_ptr<ModelNode> node) {

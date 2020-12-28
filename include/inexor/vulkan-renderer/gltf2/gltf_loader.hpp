@@ -4,6 +4,7 @@
 #include "inexor/vulkan-renderer/wrapper/device.hpp"
 #include "inexor/vulkan-renderer/wrapper/gpu_texture.hpp"
 #include "inexor/vulkan-renderer/wrapper/mesh_buffer.hpp"
+#include "inexor/vulkan-renderer/wrapper/uniform_buffer.hpp"
 
 #include <glm/glm.hpp>
 
@@ -28,7 +29,7 @@ namespace inexor::vulkan_renderer::gltf2 {
 class Model {
 
     const wrapper::Device &m_device;
-    std::string m_name;
+    std::string m_model_name;
     std::string m_file_name;
     tinygltf::Model m_gltf_model;
 
@@ -79,6 +80,20 @@ class Model {
     std::vector<uint32_t> m_index_data;
     std::vector<ModelVertex> m_vertex_data;
 
+    const std::uint32_t m_swapchain_image_count;
+
+    struct ModelMatrixUBO {
+        glm::mat4 projection;
+        glm::mat4 model;
+        glm::vec4 light = glm::vec4(5.0f, 5.0f, -5.0f, 1.0f);
+    };
+
+    const ModelMatrixUBO m_matrices;
+
+    std::vector<wrapper::UniformBuffer> m_uniform_buffers;
+
+    std::vector<wrapper::ResourceDescriptor> m_descriptors;
+
     void load_textures();
 
     void load_texture_indices();
@@ -97,12 +112,15 @@ class Model {
     /// @brief
     void setup_descriptor_sets();
 
+    void create_mesh_buffer();
+
 public:
     /// @brief
     /// @param device
     /// @param file_name
     /// @param model_name
-    Model(const wrapper::Device &device, std::string &file_name, std::string &model_name);
+    Model(const wrapper::Device &device, std::uint32_t swapchain_image_count, std::string &file_name,
+          std::string &model_name);
 
     ~Model();
 
