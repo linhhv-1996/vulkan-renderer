@@ -22,7 +22,7 @@ class DescriptorBuilder {
     std::vector<VkDescriptorImageInfo> m_descriptor_image_infos;
 
 public:
-    /// @brief Constructs the descriptor builder.
+    /// @brief Construct the descriptor builder.
     /// @param device The const reference to a device RAII wrapper instance.
     /// @param swapchain_image_count The number of images in swapchain.
     DescriptorBuilder(const Device &device, std::uint32_t swapchain_image_count);
@@ -38,25 +38,37 @@ public:
     // TODO: Support uniform buffer offset in VkDescriptorBufferInfo.
     // TODO: Offer overloaded methods which expose more fields of the structures.
 
-    /// @brief Adds a uniform buffer to the descriptor container.
+    /// @brief Add a uniform buffer to the descriptor container.
     /// @tparam T The type of the uniform buffer.
     /// @param uniform_buffer The uniform buffer which contains the data which will be accessed by the shader.
     /// @param binding The binding index which will be used in the SPIR-V shader.
     /// @param shader_stage The shader stage the uniform buffer will be used in, most likely the vertex shader.
     /// @return A const reference to this DescriptorBuilder instance.
     template <typename T>
-    DescriptorBuilder &add_uniform_buffer(const VkBuffer uniform_buffer, const std::uint32_t binding,
-                                          const VkShaderStageFlagBits shader_stage = VK_SHADER_STAGE_VERTEX_BIT);
+    DescriptorBuilder &add_uniform_buffer(VkBuffer uniform_buffer, std::uint32_t binding,
+                                          VkShaderStageFlagBits shader_stage = VK_SHADER_STAGE_VERTEX_BIT);
 
-    /// @brief Adds a combined image sampler to the descriptor container.
-    /// @param image_sampler The pointer to the combined image sampler.
-    /// @param image_view The pointer to the image view.
+    /// @brief Add a combined image sampler to the descriptor container.
+    /// @note To avoid code duplication, this method calls add_combined_image_sampler_array internally.
+    /// @param image_sampler The the combined image sampler.
+    /// @param image_view The the image view.
     /// @param binding The binding index which will be used in the SPIR-V shader.
     /// @param shader_stage The shader stage the uniform buffer will be used in, most likely the fragment shader.
     /// @return A const reference to this DescriptorBuilder instance.
-    DescriptorBuilder &
-    add_combined_image_sampler(const VkSampler image_sampler, const VkImageView image_view, const std::uint32_t binding,
-                               const VkShaderStageFlagBits shader_stage = VK_SHADER_STAGE_FRAGMENT_BIT);
+    DescriptorBuilder &add_combined_image_sampler(VkSampler image_sampler, VkImageView image_view,
+                                                  std::uint32_t binding,
+                                                  VkShaderStageFlagBits shader_stage = VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    /// @brief Add a std::vector of combined image sampler to the descriptor container.
+    /// @param image_samplers A std::vector of the combined image sampers.
+    /// @param image_views A std::vector of the image views.
+    /// @param bindings The binding indices which will be used by the SPIR-V shader.
+    /// @param shader_stages The shader stages the combined image samplers will be used in.
+    /// @return A const reference to this DescriptorBuilder instance.
+    DescriptorBuilder &add_combined_image_sampler_array(std::vector<VkSampler> image_samplers,
+                                                        std::vector<VkImageView> image_views,
+                                                        std::vector<std::uint32_t> bindings,
+                                                        std::vector<VkShaderStageFlagBits> shader_stages);
 
     /// @brief Builds the resource descriptor.
     /// @param name The internal name of the resource descriptor.
@@ -65,8 +77,8 @@ public:
 };
 
 template <typename T>
-DescriptorBuilder &DescriptorBuilder::add_uniform_buffer(const VkBuffer uniform_buffer, const std::uint32_t binding,
-                                                         const VkShaderStageFlagBits shader_stage) {
+DescriptorBuilder &DescriptorBuilder::add_uniform_buffer(VkBuffer uniform_buffer, std::uint32_t binding,
+                                                         VkShaderStageFlagBits shader_stage) {
     assert(uniform_buffer);
 
     VkDescriptorSetLayoutBinding layout_binding{};
