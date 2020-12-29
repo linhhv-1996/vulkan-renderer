@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "inexor/vulkan-renderer/frame_graph.hpp"
 #include "inexor/vulkan-renderer/wrapper/command_buffer.hpp"
 #include "inexor/vulkan-renderer/wrapper/command_pool.hpp"
 #include "inexor/vulkan-renderer/wrapper/descriptor.hpp"
@@ -26,19 +27,14 @@ namespace inexor::vulkan_renderer {
 class ImGUIOverlay {
     const wrapper::Device &m_device;
     const wrapper::Swapchain &m_swapchain;
-    VkPipelineLayout m_pipeline_layout{VK_NULL_HANDLE};
 
     float m_scale{1.0f};
 
-    std::unique_ptr<wrapper::MeshBuffer<ImDrawVert, ImDrawIdx>> m_imgui_mesh;
     std::unique_ptr<wrapper::GpuTexture> m_imgui_texture;
-    std::unique_ptr<wrapper::RenderPass> m_renderpass;
     std::unique_ptr<wrapper::Shader> m_vert_shader;
     std::unique_ptr<wrapper::Shader> m_frag_shader;
     std::unique_ptr<wrapper::CommandPool> m_command_pool;
     std::unique_ptr<wrapper::ResourceDescriptor> m_descriptor;
-    std::unique_ptr<wrapper::GraphicsPipeline> m_pipeline;
-    std::unique_ptr<wrapper::Fence> m_ui_rendering_finished;
 
     std::uint32_t m_vertex_count{0};
     std::uint32_t m_index_count{0};
@@ -47,26 +43,31 @@ class ImGUIOverlay {
     std::vector<std::unique_ptr<wrapper::CommandBuffer>> m_command_buffers;
     std::vector<std::unique_ptr<wrapper::Framebuffer>> m_framebuffers;
 
+    BufferResource *m_index_buffer{nullptr};
+    BufferResource *m_vertex_buffer{nullptr};
+
     // TODO: Implement an RAII wrapper for push constants!
     struct PushConstBlock {
         glm::vec2 scale;
         glm::vec2 translate;
     } m_push_const_block{};
 
+    bool should_update();
+    void update_buffers(FrameGraph *frame_graph);
+    void update(const PhysicalStage *phys, const wrapper::CommandBuffer &cmd_buf);
+
 public:
     /// @brief Default constructor
     /// @param device A reference to the device wrapper.
     /// @param swapchain A reference to the swapchain.
-    ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapchain &swapchain);
+    ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapchain &swapchain, FrameGraph *frame_graph,
+                 TextureResource *back_buffer);
     ImGUIOverlay(const ImGUIOverlay &) = delete;
     ImGUIOverlay(ImGUIOverlay &&) = delete;
     ~ImGUIOverlay();
 
     ImGUIOverlay &operator=(const ImGUIOverlay &) = delete;
     ImGUIOverlay &operator=(ImGUIOverlay &&) = delete;
-
-    void update();
-    void render(std::uint32_t image_index);
 
     [[nodiscard]] float scale() const {
         return m_scale;

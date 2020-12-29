@@ -118,18 +118,21 @@ void FrameGraph::alloc_command_buffers(const RenderStage *stage, PhysicalStage *
 void FrameGraph::build_pipeline_layout(const RenderStage *stage, PhysicalStage *phys) const {
     auto pipeline_layout_ci = wrapper::make_info<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = static_cast<std::uint32_t>(stage->m_descriptor_layouts.size());
+    pipeline_layout_ci.pushConstantRangeCount = static_cast<std::uint32_t>(stage->m_push_constant_ranges.size());
     pipeline_layout_ci.pSetLayouts = stage->m_descriptor_layouts.data();
+    pipeline_layout_ci.pPushConstantRanges = stage->m_push_constant_ranges.data();
     if (const auto result =
             vkCreatePipelineLayout(m_device.device(), &pipeline_layout_ci, nullptr, &phys->m_pipeline_layout);
         result != VK_SUCCESS) {
         throw exceptions::VulkanException("Failed to create pipeline layout!", result);
     }
-
     m_device.set_debug_marker_name(phys->m_pipeline_layout, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
                                    stage->m_name + " pipeline layout");
 }
 
-void FrameGraph::record_command_buffer(const RenderStage *stage, PhysicalStage *phys, int image_index) const {
+void FrameGraph::record_command_buffer(const RenderStage *stage, PhysicalStage *phys, int image_index) {
+    stage->m_pre_record(this);
+
     // TODO: Remove simultaneous usage once we have proper max frames in flight control.
     auto &cmd_buf = phys->m_command_buffers[image_index];
     cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
@@ -317,6 +320,16 @@ void FrameGraph::build_graphics_pipeline(const GraphicsStage *stage, PhysicalGra
     VkPipelineColorBlendAttachmentState blend_attachment{};
     blend_attachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    // TODO: NOT RIGHT!!!!!!!
+    if (stage->m_name == "imgui stage") {
+        blend_attachment.blendEnable = VK_TRUE;
+        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
 
     auto blend_state = wrapper::make_info<VkPipelineColorBlendStateCreateInfo>();
     blend_state.attachmentCount = 1;
@@ -407,10 +420,13 @@ void FrameGraph::compile(const RenderResource &target) {
 #endif
 
         if (const auto *buffer_resource = resource->as<BufferResource>()) {
+            if (buffer_resource->m_name == "imgui index buffer" || buffer_resource->m_name == "imgui vertex buffer") {
+                continue;
+            }
             assert(buffer_resource->m_usage != BufferUsage::INVALID);
             auto *phys = create<PhysicalBuffer>(buffer_resource, m_device.allocator(), m_device.device());
 
-            const bool is_uploading_data = buffer_resource->m_data != nullptr;
+            const bool is_uploading_data = buffer_resource->m_data != nullptr || buffer_resource->m_late_upload;
             alloc_ci.flags |= is_uploading_data ? VMA_ALLOCATION_CREATE_MAPPED_BIT : 0U;
             alloc_ci.usage = is_uploading_data ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_GPU_ONLY;
 
@@ -435,7 +451,7 @@ void FrameGraph::compile(const RenderResource &target) {
                 throw exceptions::VulkanException("Failed to create buffer!", result);
             }
 
-            if (is_uploading_data) {
+            if (is_uploading_data && buffer_resource->m_data != nullptr) {
                 assert(alloc_info.pMappedData != nullptr);
                 std::memcpy(alloc_info.pMappedData, buffer_resource->m_data, buffer_resource->m_data_size);
             }
@@ -512,7 +528,7 @@ void FrameGraph::compile(const RenderResource &target) {
 }
 
 void FrameGraph::render(int image_index, VkSemaphore signal_semaphore, VkSemaphore wait_semaphore,
-                        VkQueue graphics_queue) const {
+                        VkQueue graphics_queue) {
     auto submit_info = wrapper::make_info<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.signalSemaphoreCount = 1;
@@ -524,10 +540,12 @@ void FrameGraph::render(int image_index, VkSemaphore signal_semaphore, VkSemapho
     submit_info.pWaitDstStageMask = wait_stage_mask.data();
 
     for (const auto *stage : m_stage_stack) {
-        if (!stage->m_dynamic || !stage->m_should_record()) {
+        if (!stage->m_dynamic) {
             continue;
         }
         auto &phys = *m_stage_map.at(stage);
+        vkQueueWaitIdle(graphics_queue);
+        vkResetCommandBuffer(phys.m_command_buffers[image_index].get(), 0);
         record_command_buffer(stage, &phys, image_index);
     }
 
@@ -536,7 +554,47 @@ void FrameGraph::render(int image_index, VkSemaphore signal_semaphore, VkSemapho
         auto *cmd_buf = stage->m_command_buffers[image_index].get();
         submit_info.pCommandBuffers = &cmd_buf;
         vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.waitSemaphoreCount = 0;
     }
+}
+
+void *FrameGraph::upload_to_buffer(const BufferResource *buffer, std::uint32_t size, const void *data) {
+    if (m_resource_map.count(buffer) != 0) {
+        m_resource_map.erase(buffer);
+    }
+    const bool is_uploading_data = size != 0;
+    auto *phys = create<PhysicalBuffer>(buffer, m_device.allocator(), m_device.device());
+    VmaAllocationCreateInfo alloc_ci{};
+#if VMA_RECORDING_ENABLED
+    alloc_ci.flags |= VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
+    alloc_ci.pUserData = const_cast<char *>(resource->m_name.data());
+#endif
+    alloc_ci.flags |= is_uploading_data ? VMA_ALLOCATION_CREATE_MAPPED_BIT : 0U;
+    alloc_ci.usage = is_uploading_data ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_GPU_ONLY;
+    auto buffer_ci = wrapper::make_info<VkBufferCreateInfo>();
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_ci.size = size;
+    switch (buffer->m_usage) {
+    case BufferUsage::INDEX_BUFFER:
+        buffer_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        break;
+    case BufferUsage::VERTEX_BUFFER:
+        buffer_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        break;
+    default:
+        assert(false);
+    }
+    VmaAllocationInfo alloc_info;
+    if (vmaCreateBuffer(m_device.allocator(), &buffer_ci, &alloc_ci, &phys->m_buffer, &phys->m_allocation,
+                        &alloc_info) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create buffer!");
+    }
+    if (is_uploading_data && data != nullptr) {
+        assert(alloc_info.pMappedData != nullptr);
+        std::memcpy(alloc_info.pMappedData, data, size);
+    }
+    return alloc_info.pMappedData;
 }
 
 } // namespace inexor::vulkan_renderer

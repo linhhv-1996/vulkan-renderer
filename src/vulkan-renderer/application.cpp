@@ -535,7 +535,20 @@ void Application::update_imgui_overlay() {
     ImGui::PopStyleVar();
     ImGui::Render();
 
-    m_imgui_overlay->update();
+    ImGui::NewFrame();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+    ImGui::SetNextWindowPos(ImVec2(10, 10));
+    ImGui::SetNextWindowSize(ImVec2(200, 0));
+    ImGui::Begin("Inexor Vulkan-renderer", nullptr,
+                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Text("%s", m_device->gpu_name().c_str());
+    ImGui::Text("Engine version %d.%d.%d", VK_VERSION_MAJOR(m_engine_version), VK_VERSION_MINOR(m_engine_version),
+                VK_VERSION_PATCH(m_engine_version));
+    ImGui::PushItemWidth(150.0f * m_imgui_overlay->scale());
+    ImGui::PopItemWidth();
+    ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::Render();
 }
 
 void Application::process_mouse_input() {

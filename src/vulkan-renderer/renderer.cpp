@@ -51,6 +51,9 @@ void VulkanRenderer::setup_frame_graph() {
     for (const auto &shader : m_shaders) {
         main_stage.uses_shader(shader);
     }
+
+    m_imgui_overlay.reset();
+    m_imgui_overlay = std::make_unique<ImGUIOverlay>(*m_device, *m_swapchain, m_frame_graph.get(), &back_buffer);
     m_frame_graph->compile(back_buffer);
 }
 
@@ -88,9 +91,6 @@ void VulkanRenderer::recreate_swapchain() {
                       m_window->width(), m_window->height());
 
     m_game_camera = new_camera;
-
-    m_imgui_overlay.reset();
-    m_imgui_overlay = std::make_unique<ImGUIOverlay>(*m_device, *m_swapchain);
 }
 
 void VulkanRenderer::render_frame() {
@@ -104,8 +104,6 @@ void VulkanRenderer::render_frame() {
     m_frame_graph->render(image_index, m_rendering_finished_semaphore->get(), m_image_available_semaphore->get(),
                           m_device->graphics_queue());
 
-    m_imgui_overlay->render(image_index);
-
     // TODO(): Create a queue wrapper class
     auto present_info = wrapper::make_info<VkPresentInfoKHR>();
     present_info.swapchainCount = 1;
@@ -113,7 +111,6 @@ void VulkanRenderer::render_frame() {
     present_info.pImageIndices = &image_index;
     present_info.pSwapchains = m_swapchain->swapchain_ptr();
     present_info.pWaitSemaphores = m_rendering_finished_semaphore->ptr();
-
     vkQueuePresentKHR(m_device->present_queue(), &present_info);
 
     if (auto fps_value = m_fps_counter.update()) {

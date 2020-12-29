@@ -43,6 +43,11 @@ void CommandBuffer::bind_descriptor(const ResourceDescriptor &descriptor, VkPipe
                             descriptor.descriptor_sets().data(), 0, nullptr);
 }
 
+void CommandBuffer::push_constants(VkShaderStageFlags stage, std::uint32_t size, const void *data,
+                                   VkPipelineLayout layout) const {
+    vkCmdPushConstants(m_command_buffer, layout, stage, 0, size, data);
+}
+
 void CommandBuffer::end() const {
     vkEndCommandBuffer(m_command_buffer);
 }

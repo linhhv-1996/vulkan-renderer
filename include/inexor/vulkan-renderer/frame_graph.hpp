@@ -87,6 +87,9 @@ private:
     BufferUsage m_usage{BufferUsage::INVALID};
     std::vector<VkVertexInputAttributeDescription> m_vertex_attributes;
 
+    // Flag to specify whether data will be uploaded during rendering.
+    bool m_late_upload{false};
+
     // Data to upload during frame graph compilation.
     const void *m_data{nullptr};
     std::size_t m_data_size{0};
@@ -100,6 +103,11 @@ public:
     /// @see BufferUsage
     void set_usage(BufferUsage usage) {
         m_usage = usage;
+    }
+
+    /// @brief Specifies that this buffer will have data uploaded to it during rendering.
+    void set_late_upload(bool late_upload) {
+        m_late_upload = late_upload;
     }
 
     /// @brief Specifies that element `offset` of this vertex buffer is of format `format`
@@ -172,6 +180,8 @@ private:
     std::vector<const RenderResource *> m_reads;
 
     std::vector<VkDescriptorSetLayout> m_descriptor_layouts;
+    std::vector<VkPushConstantRange> m_push_constant_ranges;
+    std::function<void(FrameGraph *)> m_pre_record{[](FrameGraph *) {}};
     std::function<void(const class PhysicalStage *, const wrapper::CommandBuffer &)> m_on_record;
 
     bool m_dynamic{false};
@@ -201,8 +211,20 @@ public:
         m_descriptor_layouts.push_back(layout);
     }
 
+    /// @brief Specify that the push constant data layout specified by `range` will be used in this stage's shaders.
+    void add_push_constant_range(VkPushConstantRange range) {
+        m_push_constant_ranges.push_back(range);
+    }
+
+    /// @brief Specifies a function that will be called before command buffer recordation for this stage.
+    /// @details The most common use for the called function is to write data to buffers before rendering.
+    void set_pre_record(std::function<void(FrameGraph *)> pre_record) {
+        m_pre_record = std::move(pre_record);
+    }
+
     /// @brief Specifies a function that will be called during command buffer recordation for this stage
-    /// @details This function can be used to specify other vulkan commands during command buffer recordation. The most
+    /// @details The called function can be used to specify other vulkan commands during command buffer recordation. The
+    /// most
     ///          common use for this is for draw commands.
     void set_on_record(std::function<void(const class PhysicalStage *, const wrapper::CommandBuffer &)> on_record) {
         m_on_record = std::move(on_record);
@@ -426,7 +448,7 @@ private:
     // Functions for building stage related vulkan objects.
     void alloc_command_buffers(const RenderStage *, PhysicalStage *) const;
     void build_pipeline_layout(const RenderStage *, PhysicalStage *) const;
-    void record_command_buffer(const RenderStage *, PhysicalStage *, int image_index) const;
+    void record_command_buffer(const RenderStage *, PhysicalStage *, int image_index);
 
     // Functions for building graphics stage related vulkan objects.
     void build_render_pass(const GraphicsStage *, PhysicalGraphicsStage *) const;
@@ -458,8 +480,9 @@ public:
 
     /// @brief Submits the command frame's command buffers for drawing
     /// @param image_index The current frame, typically retrieved from vkAcquireNextImageKhr
-    void render(int image_index, VkSemaphore signal_semaphore, VkSemaphore wait_semaphore,
-                VkQueue graphics_queue) const;
+    void render(int image_index, VkSemaphore signal_semaphore, VkSemaphore wait_semaphore, VkQueue graphics_queue);
+
+    void *upload_to_buffer(const BufferResource *buffer, std::uint32_t size, const void *data);
 };
 
 template <typename T>
