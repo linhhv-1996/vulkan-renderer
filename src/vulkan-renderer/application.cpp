@@ -529,7 +529,7 @@ void Application::update_imgui_overlay() {
     ImGui::Text("%s", m_device->gpu_name().c_str());
     ImGui::Text("Engine version %d.%d.%d", VK_VERSION_MAJOR(m_engine_version), VK_VERSION_MINOR(m_engine_version),
                 VK_VERSION_PATCH(m_engine_version));
-    ImGui::PushItemWidth(150.0f * m_imgui_overlay->get_scale());
+    ImGui::PushItemWidth(150.0f * m_imgui_overlay->scale());
     ImGui::PopItemWidth();
     ImGui::End();
     ImGui::PopStyleVar();

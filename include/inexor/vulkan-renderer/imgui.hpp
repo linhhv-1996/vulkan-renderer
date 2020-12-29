@@ -40,7 +40,6 @@ class ImGUIOverlay {
     std::unique_ptr<wrapper::GraphicsPipeline> m_pipeline;
     std::unique_ptr<wrapper::Fence> m_ui_rendering_finished;
 
-    std::uint32_t m_subpass{0};
     std::uint32_t m_vertex_count{0};
     std::uint32_t m_index_count{0};
 
@@ -59,21 +58,19 @@ public:
     /// @param device A reference to the device wrapper.
     /// @param swapchain A reference to the swapchain.
     ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapchain &swapchain);
-
+    ImGUIOverlay(const ImGUIOverlay &) = delete;
+    ImGUIOverlay(ImGUIOverlay &&) = delete;
     ~ImGUIOverlay();
 
-    ImGUIOverlay(const ImGUIOverlay &) = delete;
-    ImGUIOverlay(ImGUIOverlay &&other) noexcept;
-
-    ImGUIOverlay &operator=(const ImGUIOverlay &other) = delete;
-    ImGUIOverlay &operator=(ImGUIOverlay &&other) = delete;
-
-    [[nodiscard]] float get_scale() const {
-        return m_scale;
-    }
+    ImGUIOverlay &operator=(const ImGUIOverlay &) = delete;
+    ImGUIOverlay &operator=(ImGUIOverlay &&) = delete;
 
     void update();
     void render(std::uint32_t image_index);
+
+    [[nodiscard]] float scale() const {
+        return m_scale;
+    }
 };
 
 } // namespace inexor::vulkan_renderer

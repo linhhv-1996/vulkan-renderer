@@ -10,19 +10,6 @@
 
 namespace inexor::vulkan_renderer {
 
-ImGUIOverlay::ImGUIOverlay(ImGUIOverlay &&other) noexcept
-    : m_device(other.m_device), m_swapchain(other.m_swapchain), m_scale(other.m_scale),
-      m_imgui_mesh(std::exchange(other.m_imgui_mesh, nullptr)),
-      m_imgui_texture(std::exchange(other.m_imgui_texture, nullptr)),
-      m_renderpass(std::exchange(other.m_renderpass, nullptr)),
-      m_vert_shader(std::exchange(other.m_vert_shader, nullptr)),
-      m_frag_shader(std::exchange(other.m_frag_shader, nullptr)),
-      m_command_pool(std::exchange(other.m_command_pool, nullptr)),
-      m_descriptor(std::exchange(other.m_descriptor, nullptr)), m_pipeline(std::exchange(other.m_pipeline, nullptr)),
-      m_subpass(other.m_subpass), m_vertex_count(other.m_vertex_count), m_index_count(other.m_index_count),
-      m_shaders(other.m_shaders), m_command_buffers(std::move(other.m_command_buffers)),
-      m_framebuffers(std::move(other.m_framebuffers)), m_push_const_block(other.m_push_const_block) {}
-
 ImGUIOverlay::ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapchain &swapchain)
     : m_device(device), m_swapchain(swapchain) {
     assert(device.device());
@@ -33,7 +20,9 @@ ImGUIOverlay::ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapcha
     spdlog::debug("Creating ImGUI context");
     ImGui::CreateContext();
 
+    ImGuiIO &io = ImGui::GetIO();
     ImGuiStyle &style = ImGui::GetStyle();
+    io.FontGlobalScale = m_scale;
     style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.0f, 0.0f, 0.0f, 0.1f);
@@ -51,66 +40,48 @@ ImGUIOverlay::ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapcha
     style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.0f, 0.0f, 0.6f);
     style.Colors[ImGuiCol_ButtonActive] = ImVec4(1.0f, 0.0f, 0.0f, 0.8f);
 
-    ImGuiIO &io = ImGui::GetIO();
-    io.FontGlobalScale = m_scale;
-
-    spdlog::debug("Loading ImGUI vertex shader");
-
+    spdlog::debug("Loading ImGUI shaders");
     m_vert_shader = std::make_unique<wrapper::Shader>(m_device, VK_SHADER_STAGE_VERTEX_BIT, "ImGUI vertex shader",
                                                       "shaders/ui.vert.spv");
-
+    m_frag_shader = std::make_unique<wrapper::Shader>(m_device, VK_SHADER_STAGE_FRAGMENT_BIT, "ImGUI fragment shader",
+                                                      "shaders/ui.frag.spv");
     VkPipelineShaderStageCreateInfo shader_info{};
     shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     shader_info.module = m_vert_shader->module();
     shader_info.pName = m_vert_shader->entry_point().c_str();
-
     m_shaders.push_back(shader_info);
-
-    spdlog::debug("Loading ImGUI fragment shader");
-
-    m_frag_shader = std::make_unique<wrapper::Shader>(m_device, VK_SHADER_STAGE_FRAGMENT_BIT, "ImGUI fragment shader",
-                                                      "shaders/ui.frag.spv");
-
     shader_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     shader_info.module = m_frag_shader->module();
     shader_info.pName = m_frag_shader->entry_point().c_str();
-
     m_shaders.push_back(shader_info);
 
-    // Initialize push constant block
+    // Initialize push constant block.
     m_push_const_block.scale = glm::vec2(0.0f, 0.0f);
     m_push_const_block.translate = glm::vec2(0.0f, 0.0f);
 
-    // Load font texture
-
+    // Load font texture.
     // TODO: Move this data into a container class; have container class also support bold and italic.
     constexpr const char *FONT_FILE_PATH = "assets/fonts/NotoSans-Bold.ttf";
     constexpr float FONT_SIZE = 18.0f;
-
     spdlog::debug("Loading front '{}'", FONT_FILE_PATH);
-
     ImFont *font = io.Fonts->AddFontFromFileTTF(FONT_FILE_PATH, FONT_SIZE);
 
-    unsigned char *font_texture_data{};
-    int font_texture_width{0};
-    int font_texture_height{0};
+    unsigned char *font_texture_data = nullptr;
+    int font_texture_width = 0;
+    int font_texture_height = 0;
     io.Fonts->GetTexDataAsRGBA32(&font_texture_data, &font_texture_width, &font_texture_height);
-
     if (font == nullptr || font_texture_data == nullptr) {
         spdlog::error("Unable to load font {}.  Falling back to error texture.", FONT_FILE_PATH);
         m_imgui_texture = std::make_unique<wrapper::GpuTexture>(m_device, wrapper::CpuTexture());
     } else {
-        spdlog::debug("Creating ImGUI font texture");
-
         // Our font textures always have 4 channels and a single mip level by definition.
-        constexpr int FONT_TEXTURE_CHANNELS{4};
-        constexpr int FONT_MIP_LEVELS{1};
-
+        constexpr int FONT_TEXTURE_CHANNELS = 4;
+        constexpr int FONT_MIP_LEVELS = 1;
+        spdlog::debug("Creating ImGUI font texture");
         VkDeviceSize upload_size = static_cast<VkDeviceSize>(font_texture_width) *
                                    static_cast<VkDeviceSize>(font_texture_height) *
                                    static_cast<VkDeviceSize>(FONT_TEXTURE_CHANNELS);
-
         m_imgui_texture = std::make_unique<wrapper::GpuTexture>(
             m_device, font_texture_data, upload_size, font_texture_width, font_texture_height, FONT_TEXTURE_CHANNELS,
             FONT_MIP_LEVELS, "ImGUI font texture");
@@ -127,7 +98,6 @@ ImGUIOverlay::ImGUIOverlay(const wrapper::Device &device, const wrapper::Swapcha
         descriptor_builder.add_combined_image_sampler(m_imgui_texture->sampler(), m_imgui_texture->image_view(), 0)
             .build("ImGUI"));
 
-    // TODO() Use pipeline cache!
     std::vector<VkAttachmentDescription> attachments(1);
     attachments[0].format = m_swapchain.image_format();
     attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -220,16 +190,13 @@ ImGUIOverlay::~ImGUIOverlay() {
 
 void ImGUIOverlay::update() {
     ImDrawData *imgui_draw_data = ImGui::GetDrawData();
-    bool update_command_buffers = false;
-
     if (imgui_draw_data == nullptr) {
         return;
     }
 
     const VkDeviceSize vertex_buffer_size = imgui_draw_data->TotalVtxCount * sizeof(ImDrawVert);
     const VkDeviceSize index_buffer_size = imgui_draw_data->TotalIdxCount * sizeof(ImDrawIdx);
-
-    if ((vertex_buffer_size == 0) || (index_buffer_size == 0)) {
+    if (vertex_buffer_size == 0 || index_buffer_size == 0) {
         return;
     }
 
@@ -239,6 +206,7 @@ void ImGUIOverlay::update() {
             m_device, "imgui_mesh_buffer", imgui_draw_data->TotalVtxCount, imgui_draw_data->TotalIdxCount);
     }
 
+    bool update_command_buffers = false;
     if ((m_imgui_mesh->get_vertex_buffer() == VK_NULL_HANDLE) || (m_vertex_count != imgui_draw_data->TotalVtxCount)) {
         spdlog::debug("Creating ImGUI vertex buffer");
 
@@ -265,101 +233,100 @@ void ImGUIOverlay::update() {
         update_command_buffers = true;
     }
 
-    if (update_command_buffers) {
-
-        auto *vertex_buffer_address = static_cast<ImDrawVert *>(m_imgui_mesh->get_vertex_buffer_address());
-        auto *index_buffer_address = static_cast<ImDrawIdx *>(m_imgui_mesh->get_index_buffer_address());
-
-        for (std::size_t i = 0; i < imgui_draw_data->CmdListsCount; i++) {
-            const ImDrawList *cmd_list = imgui_draw_data->CmdLists[i];
-            std::memcpy(vertex_buffer_address, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-            std::memcpy(index_buffer_address, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-            vertex_buffer_address += cmd_list->VtxBuffer.Size;
-            index_buffer_address += cmd_list->IdxBuffer.Size;
-        }
-
-        const ImGuiIO &io = ImGui::GetIO();
-
-        spdlog::debug("Creating frame buffers for ImGUI");
-
-        // TODO: Do we even need to recreate framebuffers?
-        m_framebuffers.clear();
-        m_framebuffers.resize(m_swapchain.image_count());
-
-        m_command_buffers.clear();
-        m_command_buffers.resize(m_swapchain.image_count());
-
-        spdlog::debug("Creating ImGUI renderpass");
-
-        // Record command buffer for every image in swapchain
-        for (std::size_t k = 0; k < m_swapchain.image_count(); k++) {
-            std::vector<VkImageView> image_views;
-
-            image_views.push_back(m_swapchain.image_view(k));
-
-            m_framebuffers[k] = std::make_unique<wrapper::Framebuffer>(m_device, m_renderpass->get(), image_views,
-                                                                       m_swapchain, "ImGUI Framebuffer");
-
-            m_command_buffers[k] = std::make_unique<wrapper::CommandBuffer>(m_device, m_command_pool->get(), "ImGUI");
-
-            m_command_buffers[k]->begin();
-
-            std::array<VkClearValue, 1> clear_values{};
-            clear_values[0].color = {0.0f, 0.0f, 0.0f};
-
-            auto render_pass_bi = wrapper::make_info<VkRenderPassBeginInfo>();
-            render_pass_bi.framebuffer = m_framebuffers[k]->get();
-            render_pass_bi.renderArea.extent = m_swapchain.extent();
-            render_pass_bi.renderPass = m_renderpass->get();
-            render_pass_bi.clearValueCount = 1;
-            render_pass_bi.pClearValues = clear_values.data();
-
-            m_command_buffers[k]->begin_render_pass(render_pass_bi);
-            m_command_buffers[k]->bind_graphics_pipeline(m_pipeline->get());
-
-            auto descriptor_sets = m_descriptor->descriptor_sets();
-
-            vkCmdBindDescriptorSets(m_command_buffers[k]->get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0,
-                                    1, &descriptor_sets[0], 0, nullptr);
-
-            m_push_const_block.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
-            m_push_const_block.translate = glm::vec2(-1.0f);
-
-            vkCmdPushConstants(m_command_buffers[k]->get(), m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                               sizeof(PushConstBlock), &m_push_const_block);
-
-            std::array<VkDeviceSize, 1> offsets{0};
-
-            // TODO() Refactor this!
-            auto *vertex_buffer = m_imgui_mesh->get_vertex_buffer();
-
-            vkCmdBindVertexBuffers(m_command_buffers[k]->get(), 0, 1, &vertex_buffer, offsets.data());
-
-            vkCmdBindIndexBuffer(m_command_buffers[k]->get(), m_imgui_mesh->get_index_buffer(), 0,
-                                 VK_INDEX_TYPE_UINT16);
-
-            std::int32_t vertex_offset{0};
-            std::int32_t index_offset{0};
-
-            for (int32_t i = 0; i < imgui_draw_data->CmdListsCount; i++) {
-                const ImDrawList *cmd_list = imgui_draw_data->CmdLists[i];
-                for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++) {
-                    const ImDrawCmd *imgui_draw_command = &cmd_list->CmdBuffer[j];
-                    vkCmdDrawIndexed(m_command_buffers[k]->get(), imgui_draw_command->ElemCount, 1, index_offset,
-                                     vertex_offset, 0);
-
-                    index_offset += imgui_draw_command->ElemCount;
-                }
-                vertex_offset += cmd_list->VtxBuffer.Size;
-            }
-
-            m_command_buffers[k]->end_render_pass();
-            m_command_buffers[k]->end();
-        }
-
-        // We must reset the VkFence before we can vkQueueSubmit in ImGUIOverlay::render.
-        m_ui_rendering_finished->reset();
+    if (!update_command_buffers) {
+        return;
     }
+
+    auto *vertex_buffer_address = static_cast<ImDrawVert *>(m_imgui_mesh->get_vertex_buffer_address());
+    auto *index_buffer_address = static_cast<ImDrawIdx *>(m_imgui_mesh->get_index_buffer_address());
+
+    for (std::size_t i = 0; i < imgui_draw_data->CmdListsCount; i++) {
+        const ImDrawList *cmd_list = imgui_draw_data->CmdLists[i];
+        std::memcpy(vertex_buffer_address, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        std::memcpy(index_buffer_address, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+        vertex_buffer_address += cmd_list->VtxBuffer.Size;
+        index_buffer_address += cmd_list->IdxBuffer.Size;
+    }
+
+    const ImGuiIO &io = ImGui::GetIO();
+
+    spdlog::debug("Creating frame buffers for ImGUI");
+
+    // TODO: Do we even need to recreate framebuffers?
+    m_framebuffers.clear();
+    m_framebuffers.resize(m_swapchain.image_count());
+
+    m_command_buffers.clear();
+    m_command_buffers.resize(m_swapchain.image_count());
+
+    spdlog::debug("Creating ImGUI renderpass");
+
+    // Record command buffer for every image in swapchain
+    for (std::size_t k = 0; k < m_swapchain.image_count(); k++) {
+        std::vector<VkImageView> image_views;
+        image_views.push_back(m_swapchain.image_view(k));
+
+        m_framebuffers[k] = std::make_unique<wrapper::Framebuffer>(m_device, m_renderpass->get(), image_views,
+                                                                   m_swapchain, "ImGUI Framebuffer");
+
+        m_command_buffers[k] = std::make_unique<wrapper::CommandBuffer>(m_device, m_command_pool->get(), "ImGUI");
+
+        m_command_buffers[k]->begin();
+
+        std::array<VkClearValue, 1> clear_values{};
+        clear_values[0].color = {0.0f, 0.0f, 0.0f};
+
+        auto render_pass_bi = wrapper::make_info<VkRenderPassBeginInfo>();
+        render_pass_bi.framebuffer = m_framebuffers[k]->get();
+        render_pass_bi.renderArea.extent = m_swapchain.extent();
+        render_pass_bi.renderPass = m_renderpass->get();
+        render_pass_bi.clearValueCount = 1;
+        render_pass_bi.pClearValues = clear_values.data();
+
+        m_command_buffers[k]->begin_render_pass(render_pass_bi);
+        m_command_buffers[k]->bind_graphics_pipeline(m_pipeline->get());
+
+        auto descriptor_sets = m_descriptor->descriptor_sets();
+
+        vkCmdBindDescriptorSets(m_command_buffers[k]->get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1,
+                                &descriptor_sets[0], 0, nullptr);
+
+        m_push_const_block.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
+        m_push_const_block.translate = glm::vec2(-1.0f);
+
+        vkCmdPushConstants(m_command_buffers[k]->get(), m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                           sizeof(PushConstBlock), &m_push_const_block);
+
+        std::array<VkDeviceSize, 1> offsets{0};
+
+        // TODO() Refactor this!
+        auto *vertex_buffer = m_imgui_mesh->get_vertex_buffer();
+
+        vkCmdBindVertexBuffers(m_command_buffers[k]->get(), 0, 1, &vertex_buffer, offsets.data());
+
+        vkCmdBindIndexBuffer(m_command_buffers[k]->get(), m_imgui_mesh->get_index_buffer(), 0, VK_INDEX_TYPE_UINT16);
+
+        std::int32_t vertex_offset{0};
+        std::int32_t index_offset{0};
+
+        for (int32_t i = 0; i < imgui_draw_data->CmdListsCount; i++) {
+            const ImDrawList *cmd_list = imgui_draw_data->CmdLists[i];
+            for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++) {
+                const ImDrawCmd *imgui_draw_command = &cmd_list->CmdBuffer[j];
+                vkCmdDrawIndexed(m_command_buffers[k]->get(), imgui_draw_command->ElemCount, 1, index_offset,
+                                 vertex_offset, 0);
+
+                index_offset += imgui_draw_command->ElemCount;
+            }
+            vertex_offset += cmd_list->VtxBuffer.Size;
+        }
+
+        m_command_buffers[k]->end_render_pass();
+        m_command_buffers[k]->end();
+    }
+
+    // We must reset the VkFence before we can vkQueueSubmit in ImGUIOverlay::render.
+    m_ui_rendering_finished->reset();
 }
 
 void ImGUIOverlay::render(const std::uint32_t image_index) {
