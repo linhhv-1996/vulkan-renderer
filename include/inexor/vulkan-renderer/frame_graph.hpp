@@ -225,6 +225,8 @@ class GraphicsStage : public RenderStage {
 
 private:
     bool m_clears_screen{false};
+    bool m_depth_test{false};
+    bool m_depth_write{false};
     std::unordered_map<const BufferResource *, std::uint32_t> m_buffer_bindings;
     std::vector<VkPipelineShaderStageCreateInfo> m_shaders;
 
@@ -240,6 +242,12 @@ public:
     /// @brief Specifies that this stage should clear the screen before rendering
     void set_clears_screen(bool clears_screen) {
         m_clears_screen = clears_screen;
+    }
+
+    /// @brief Specifies the options that this stage will use for depth testing.
+    void set_depth_options(bool depth_test, bool depth_write) {
+        m_depth_test = depth_test;
+        m_depth_write = depth_write;
     }
 
     /// @brief Specifies that `buffer` should map to `binding` in the shaders of this stage

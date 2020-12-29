@@ -298,8 +298,8 @@ void FrameGraph::build_graphics_pipeline(const GraphicsStage *stage, PhysicalGra
     // TODO: Also allow depth compare func to be changed?
     auto depth_stencil = wrapper::make_info<VkPipelineDepthStencilStateCreateInfo>();
     depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-    depth_stencil.depthTestEnable = VK_TRUE;
-    depth_stencil.depthWriteEnable = VK_TRUE;
+    depth_stencil.depthTestEnable = stage->m_depth_test ? VK_TRUE : VK_FALSE;
+    depth_stencil.depthWriteEnable = stage->m_depth_write ? VK_TRUE : VK_FALSE;
 
     // TODO: Allow culling to be disabled.
     // TODO: Wireframe rendering.
