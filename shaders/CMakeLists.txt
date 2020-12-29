@@ -7,6 +7,8 @@ set(
     SHADERS
     main.vert
     main.frag
+	mesh.vert
+	mesh.frag
     ui.frag
     ui.vert
 )
