@@ -83,12 +83,12 @@ class Model {
     const std::uint32_t m_swapchain_image_count;
 
     struct ModelMatrixUBO {
-        glm::mat4 projection;
-        glm::mat4 model;
+        glm::mat4 projection = glm::mat4();
+        glm::mat4 model = glm::mat4();
         glm::vec4 light = glm::vec4(5.0f, 5.0f, -5.0f, 1.0f);
     };
 
-    const ModelMatrixUBO m_matrices;
+    const ModelMatrixUBO m_matrices{};
 
     std::vector<wrapper::UniformBuffer> m_uniform_buffers;
 
