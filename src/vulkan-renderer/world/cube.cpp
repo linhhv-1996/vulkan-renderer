@@ -216,6 +216,10 @@ bool Cube::is_root() const noexcept {
     return &(*m_parent.lock()) == this;
 }
 
+bool Cube::is_leaf() const noexcept {
+    return m_type != Type::OCTANT;
+}
+
 std::size_t Cube::grid_level() const noexcept {
     std::size_t level = 0;
     std::shared_ptr<Cube> parent = m_parent.lock();
@@ -279,7 +283,7 @@ Cube::Type Cube::type() const noexcept {
     return m_type;
 }
 
-const std::array<std::shared_ptr<Cube>, Cube::SUB_CUBES> &Cube::childs() const {
+const std::array<std::shared_ptr<Cube>, Cube::SUB_CUBES> &Cube::childs() const noexcept {
     return m_childs;
 }
 

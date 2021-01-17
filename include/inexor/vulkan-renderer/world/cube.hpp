@@ -2,9 +2,11 @@
 
 #include "inexor/vulkan-renderer/world/indentation.hpp"
 
+#include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -37,7 +39,7 @@ class Cube : public std::enable_shared_from_this<Cube> {
     friend std::shared_ptr<world::Cube> io::deserialize_octree_impl(const io::ByteStream &stream);
 
 public:
-    /// Maximum of sub cubes (childs)
+    /// Maximum of sub cubes (childs).
     static constexpr std::size_t SUB_CUBES = 8;
     /// Cube edges.
     static constexpr std::size_t EDGES = 12;
@@ -61,7 +63,7 @@ public:
 private:
     Type m_type{Type::SOLID};
     float m_size{32};
-    glm::vec3 m_position{0.0F, 0.0F, 0.0F};
+    glm::vec3 m_position{0.0f, 0.0f, 0.0f};
 
     /// Root cube points to itself.
     std::weak_ptr<Cube> m_parent{weak_from_this()};
@@ -102,11 +104,38 @@ public:
 
     /// Is the current cube root.
     [[nodiscard]] bool is_root() const noexcept;
+    /// Is the current cube a leaf.
+    [[nodiscard]] bool is_leaf() const noexcept;
     /// At which child level this cube is.
     /// root cube = 0
     [[nodiscard]] std::size_t grid_level() const noexcept;
     /// Count the number of Type::SOLID and Type::NORMAL cubes.
     [[nodiscard]] std::size_t count_geometry_cubes() const noexcept;
+
+    [[nodiscard]] glm::vec3 center() const noexcept {
+        return m_position + 0.5f * m_size;
+    }
+
+    [[nodiscard]] const glm::vec3 &position() const noexcept {
+        return m_position;
+    }
+
+    [[nodiscard]] std::array<glm::vec3, 2> bounding_box() const {
+        return {m_position, {m_position.x + m_size, m_position.y + m_size, m_position.z + m_size}};
+    }
+
+    [[nodiscard]] float bounding_box_radius() const {
+        return static_cast<float>(std::sqrt(3) * m_size) / 2.0f;
+    }
+
+    [[nodiscard]] float size() const noexcept {
+        return m_size;
+    }
+
+    [[nodiscard]] float squared_distance(const glm::vec3 pos) const {
+        const auto diff = center() - pos;
+        return static_cast<float>(std::pow(glm::dot(diff, diff), 2));
+    }
 
     /// Set a new type.
     void set_type(Type new_type);
@@ -114,7 +143,7 @@ public:
     [[nodiscard]] Type type() const noexcept;
 
     /// Get childs.
-    [[nodiscard]] const std::array<std::shared_ptr<Cube>, Cube::SUB_CUBES> &childs() const;
+    [[nodiscard]] const std::array<std::shared_ptr<Cube>, Cube::SUB_CUBES> &childs() const noexcept;
     /// Get indentations.
     [[nodiscard]] std::array<Indentation, Cube::EDGES> indentations() const noexcept;
 

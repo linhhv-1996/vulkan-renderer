@@ -4,6 +4,8 @@
 #include "inexor/vulkan-renderer/octree_gpu_vertex.hpp"
 #include "inexor/vulkan-renderer/standard_ubo.hpp"
 #include "inexor/vulkan-renderer/tools/cla_parser.hpp"
+#include "inexor/vulkan-renderer/world/collision.hpp"
+#include "inexor/vulkan-renderer/world/collision_query.hpp"
 #include "inexor/vulkan-renderer/world/cube.hpp"
 #include "inexor/vulkan-renderer/wrapper/cpu_texture.hpp"
 #include "inexor/vulkan-renderer/wrapper/descriptor_builder.hpp"
@@ -194,23 +196,34 @@ void Application::load_shaders() {
 void Application::load_octree_geometry() {
     spdlog::debug("Creating octree geometry.");
 
-    std::shared_ptr<world::Cube> cube =
-        std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 2.0f, glm::vec3{0, -1, -1});
+    // Let's just create 2 worlds for testing now.
+    // TODO: Remove this again.
+    m_worlds[0] = std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 5.0f, glm::vec3{10, 0, 0});
 
-    cube->childs()[3]->set_type(world::Cube::Type::EMPTY);
-    cube->childs()[5]->set_type(world::Cube::Type::EMPTY);
-    cube->childs()[6]->set_type(world::Cube::Type::EMPTY);
-    cube->childs()[7]->set_type(world::Cube::Type::EMPTY);
+    // Create the second octree in another place so we don't have to deal with intersections yet.
+    // Create the second octree as a completely filled cube so we can test the easiest colliion case.
+    m_worlds[1] = std::make_shared<world::Cube>(world::Cube::Type::SOLID, 1.0f, glm::vec3{0, 0, 0});
 
-    for (const auto &polygons : cube->polygons(true)) {
-        for (const auto &triangle : *polygons) {
-            for (const auto &vertex : triangle) {
-                glm::vec3 color = {
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                };
-                m_octree_vertices.emplace_back(vertex, color);
+    // Create the second octree in another place so we don't have to deal with intersections yet.
+    // Create the second octree as a completely filled cube so we can test the easiest colliion case.
+    m_worlds[2] = std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 1.6f, glm::vec3{0, 10, 0});
+
+    m_worlds[0]->childs()[3]->set_type(world::Cube::Type::EMPTY);
+    m_worlds[0]->childs()[5]->set_type(world::Cube::Type::EMPTY);
+    m_worlds[0]->childs()[6]->set_type(world::Cube::Type::EMPTY);
+    m_worlds[0]->childs()[7]->set_type(world::Cube::Type::EMPTY);
+
+    for (const auto &world : m_worlds) {
+        for (const auto &polygons : world->polygons(true)) {
+            for (const auto &triangle : *polygons) {
+                for (const auto &vertex : triangle) {
+                    glm::vec3 color = {
+                        static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                        static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                        static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                    };
+                    m_octree_vertices.emplace_back(vertex, color);
+                }
             }
         }
     }
@@ -575,6 +588,8 @@ void Application::process_mouse_input() {
 void Application::run() {
     spdlog::debug("Running Application.");
 
+    std::array<world::OctreeCollisionQuery, 3> collision_tests = {*m_worlds[0], *m_worlds[1], *m_worlds[2]};
+
     while (!m_window->should_close()) {
         m_window->poll();
         update_uniform_buffers();
@@ -583,6 +598,29 @@ void Application::run() {
         process_mouse_input();
         m_camera->update(m_time_passed);
         m_time_passed = m_stopwatch.time_step();
+
+        // Check for collision between camera ray and every octree
+        for (auto &collision_test : collision_tests) {
+            const auto collision = collision_test.check_for_collision(m_camera->position(), m_camera->front());
+
+            if (collision) {
+                const auto intersection = collision.value().intersection();
+                const auto face_name = collision.value().face_name();
+                const auto face_normal = collision.value().face();
+                const auto corner = collision.value().corner();
+                const auto corner_name = collision.value().corner_name();
+                const auto edge_name = collision.value().edge_name();
+                const auto edge = collision.value().edge();
+
+                spdlog::trace("pos {} {} {} | face {} {} {} {} | corner {} {} {} {} | edge {} {} {} {}", intersection.x,
+                              intersection.y, intersection.z, face_normal.x, face_normal.y, face_normal.z,
+                              face_name.c_str(), corner.x, corner.y, corner.z, corner_name.c_str(), edge.x, edge.y,
+                              edge.z, edge_name.c_str());
+
+                // Break after one collision.
+                break;
+            }
+        }
     }
 }
 
