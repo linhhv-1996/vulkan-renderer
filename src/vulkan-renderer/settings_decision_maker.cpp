@@ -729,7 +729,7 @@ std::optional<std::uint32_t> VulkanSettingsDecisionMaker::find_presentation_queu
     // Loop through all available queue families and look for a suitable one.
     for (std::size_t i = 0; i < available_queue_families.size(); i++) {
         if (available_queue_families[i].queueCount > 0) {
-            std::uint32_t this_queue_family_index = static_cast<std::uint32_t>(i);
+            const auto this_queue_family_index = static_cast<std::uint32_t>(i);
 
             VkBool32 presentation_available = 0;
 
