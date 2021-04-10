@@ -18,7 +18,7 @@
 
 namespace inexor::vulkan_renderer {
 
-void Application::frame_buffer_resize_callback(GLFWwindow *, int width, int height) {
+void Application::frame_buffer_resize_callback(GLFWwindow *, int width, int height) { // NOLINT
     spdlog::debug("Frame buffer resize callback called. window width: {}, height: {}", width, height);
 }
 
