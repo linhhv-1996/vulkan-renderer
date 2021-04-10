@@ -504,6 +504,9 @@ VulkanSettingsDecisionMaker::decide_which_image_transformation_to_use(VkPhysical
 std::optional<VkCompositeAlphaFlagBitsKHR>
 VulkanSettingsDecisionMaker::find_composite_alpha_format(VkPhysicalDevice selected_graphics_card,
                                                          VkSurfaceKHR surface) {
+    assert(selected_graphics_card);
+    assert(surface);
+
     const std::vector<VkCompositeAlphaFlagBitsKHR> composite_alpha_flags = {
         VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
@@ -857,6 +860,11 @@ std::optional<VkFormat> VulkanSettingsDecisionMaker::find_depth_buffer_format(Vk
                                                                               const std::vector<VkFormat> &formats,
                                                                               VkImageTiling tiling,
                                                                               VkFormatFeatureFlags feature_flags) {
+    assert(graphics_card);
+    assert(!formats.empty());
+    assert(tiling);
+    assert(feature_flags);
+
     spdlog::debug("Trying to find appropriate format for depth buffer.");
 
     for (const auto &format : formats) {
