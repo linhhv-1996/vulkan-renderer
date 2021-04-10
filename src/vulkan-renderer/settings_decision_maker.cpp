@@ -225,9 +225,7 @@ std::size_t VulkanSettingsDecisionMaker::rate_graphics_card(VkPhysicalDevice gra
 
     // Loop through all memory heaps.
     for (std::size_t i = 0; i < graphics_card_memory_properties.memoryHeapCount; i++) {
-        const auto &propertyFlag = graphics_card_memory_properties.memoryHeaps[i].flags;
-
-        if (static_cast<bool>(propertyFlag & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)) {
+        if (static_cast<bool>(graphics_card_memory_properties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)) {
             // Use real GPU memory as score.
             graphics_card_score += graphics_card_memory_properties.memoryHeaps[i].size / (1000 * 1000);
         }
@@ -372,15 +370,15 @@ std::optional<VkPhysicalDevice> VulkanSettingsDecisionMaker::decide_which_graphi
         if (discrete_graphics_card_exists && integrated_graphics_card_exists) {
             // Try to prefer the discrete graphics card over the integrated one!
             VkPhysicalDevice discrete_gpu;
-            VkPhysicalDevice integrated_GPU = nullptr;
+            VkPhysicalDevice integrated_gpu = nullptr;
 
             if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_1) {
                 discrete_gpu = available_graphics_cards[0];
-                integrated_GPU = available_graphics_cards[1];
+                integrated_gpu = available_graphics_cards[1];
             } else if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_2) {
                 // The other way around.
                 discrete_gpu = available_graphics_cards[1];
-                integrated_GPU = available_graphics_cards[0];
+                integrated_gpu = available_graphics_cards[0];
             }
 
             // Usually integrated GPUs which do not support Vulkan are not visible to Vulkan's
@@ -396,20 +394,20 @@ std::optional<VkPhysicalDevice> VulkanSettingsDecisionMaker::decide_which_graphi
                 return discrete_gpu;
             }
             // Ok, so the discrete GPU is unsuitable. What about the integrated GPU?
-            if (is_graphics_card_suitable(integrated_GPU, surface)) {
+            if (is_graphics_card_suitable(integrated_gpu, surface)) {
                 spdlog::debug("You have 2 GPUs. Surprisingly, the integrated one is suitable for the application. The "
                               "discrete GPU is not!");
-                spdlog::debug("Score: {}", rate_graphics_card(integrated_GPU));
+                spdlog::debug("Score: {}", rate_graphics_card(integrated_gpu));
 
                 // This might be a very rare case though.
-                return integrated_GPU;
+                return integrated_gpu;
             }
             spdlog::critical("Neither the integrated GPU nor the discrete GPU are suitable!");
 
             // Neither the integrated GPU nor the discrete GPU are suitable!
             return std::nullopt;
         }
-        
+
         spdlog::debug("Only discrete GPUs available, no integrated graphics.");
     }
 
