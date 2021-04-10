@@ -489,9 +489,6 @@ VulkanSettingsDecisionMaker::decide_which_image_transformation_to_use(VkPhysical
     assert(graphics_card);
     assert(surface);
 
-    // Bitmask of VkSurfaceTransformFlagBitsKHR.
-    VkSurfaceTransformFlagsKHR pre_transform{};
-
     VkSurfaceCapabilitiesKHR surface_capabilities{};
 
     if (const auto result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(graphics_card, surface, &surface_capabilities);
@@ -499,14 +496,11 @@ VulkanSettingsDecisionMaker::decide_which_image_transformation_to_use(VkPhysical
         throw VulkanException("Error: vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed!", result);
     }
 
-    if (static_cast<bool>(surface_capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)) {
-        // We prefer a non-rotated transform.
-        pre_transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    } else {
-        pre_transform = surface_capabilities.currentTransform;
+    if (!static_cast<bool>(surface_capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)) {
+        return surface_capabilities.currentTransform;
     }
 
-    return pre_transform;
+    return VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 }
 
 std::optional<VkCompositeAlphaFlagBitsKHR>
