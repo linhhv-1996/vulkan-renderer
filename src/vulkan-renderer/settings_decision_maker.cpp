@@ -369,8 +369,8 @@ std::optional<VkPhysicalDevice> VulkanSettingsDecisionMaker::decide_which_graphi
 
         if (discrete_graphics_card_exists && integrated_graphics_card_exists) {
             // Try to prefer the discrete graphics card over the integrated one!
-            VkPhysicalDevice discrete_gpu;
-            VkPhysicalDevice integrated_gpu = nullptr;
+            VkPhysicalDevice discrete_gpu{nullptr};
+            VkPhysicalDevice integrated_gpu{nullptr};
 
             if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_1) {
                 discrete_gpu = available_graphics_cards[0];
