@@ -88,7 +88,7 @@ VulkanSettingsDecisionMaker::decide_which_surface_color_format_in_swapchain_to_u
         bool found_acceptable_format = false;
 
         // Loop through the list of available surface formats and compare with the list of acceptable formats.
-        for (auto &&surface_format : available_surface_formats) {
+        for (auto &surface_format : available_surface_formats) {
             for (auto &accepted_format : accepted_formats) {
                 if (surface_format.format == accepted_format) {
                     accepted_color_format.format = surface_format.format;
