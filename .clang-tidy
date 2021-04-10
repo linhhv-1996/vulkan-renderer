@@ -225,7 +225,6 @@ Checks: >
   hicpp-use-noexcept,
   hicpp-use-nullptr,
   hicpp-use-override,
-  hicpp-vararg,
   llvm-else-after-return,
   llvm-include-order,
   llvm-namespace-comment,
