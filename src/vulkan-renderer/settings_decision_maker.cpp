@@ -441,7 +441,7 @@ VulkanSettingsDecisionMaker::decide_which_graphics_card_to_use(VkInstance vulkan
     VkPhysicalDevice highest_score_gpu{};
     std::size_t highest_gpu_score{0};
 
-    for (const auto gpu_candidate : available_gpus) {
+    for (auto *gpu_candidate : available_gpus) {
         std::size_t gpu_score = rate_graphics_card(gpu_candidate);
 
         if (gpu_score > highest_gpu_score) {
