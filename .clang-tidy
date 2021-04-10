@@ -182,7 +182,6 @@ Checks: >
   cppcoreguidelines-pro-type-member-init,
   cppcoreguidelines-pro-type-reinterpret-cast,
   cppcoreguidelines-pro-type-static-cast-downcast,
-  cppcoreguidelines-pro-type-vararg,
   cppcoreguidelines-slicing,
   cppcoreguidelines-special-member-functions,
   google-build-explicit-make-pair,
