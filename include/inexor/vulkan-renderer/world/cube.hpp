@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 // forward declaration
@@ -60,6 +61,9 @@ private:
     float m_size{32};
     glm::vec3 m_position{0.0F, 0.0F, 0.0F};
 
+    /// Index of this in m_parent.m_childs; nullopt if root.
+    std::optional<uint8_t> m_index{std::nullopt};
+
     /// Root cube points to itself.
     std::weak_ptr<Cube> m_parent{weak_from_this()};
 
@@ -87,7 +91,7 @@ public:
     Cube() = default;
     explicit Cube(Type type);
     Cube(Type type, float size, const glm::vec3 &position);
-    Cube(std::weak_ptr<Cube> parent, Type type, float size, const glm::vec3 &position);
+    Cube(std::weak_ptr<Cube> parent, uint8_t index, Type type, float size, const glm::vec3 &position);
     Cube(const Cube &rhs);
     Cube(Cube &&rhs) noexcept;
     ~Cube() = default;

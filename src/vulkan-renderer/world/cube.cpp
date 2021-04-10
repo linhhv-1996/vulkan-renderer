@@ -11,6 +11,7 @@ void swap(inexor::vulkan_renderer::world::Cube &lhs, inexor::vulkan_renderer::wo
     std::swap(lhs.m_size, rhs.m_size);
     std::swap(lhs.m_position, rhs.m_position);
     std::swap(lhs.m_parent, rhs.m_parent);
+    std::swap(lhs.m_index, rhs.m_index);
     std::swap(lhs.m_indentations, rhs.m_indentations);
     std::swap(lhs.m_childs, rhs.m_childs);
     std::swap(lhs.m_polygon_cache, rhs.m_polygon_cache);
@@ -170,15 +171,18 @@ Cube::Cube(const Type type, const float size, const glm::vec3 &position) : m_siz
     set_type(type);
 }
 
-Cube::Cube(std::weak_ptr<Cube> parent, const Type type, const float size, const glm::vec3 &position)
+Cube::Cube(std::weak_ptr<Cube> parent, uint8_t index, const Type type, const float size, const glm::vec3 &position)
     : Cube(type, size, position) {
     m_parent = std::move(parent);
+    m_index = index;
     set_type(type);
 }
 
 Cube::Cube(const Cube &rhs) : Cube(rhs.m_type, rhs.m_size, rhs.m_position) {
     if (!rhs.is_root()) {
+        // Might be removed soon, see https://github.com/inexorgame/vulkan-renderer/issues/346
         m_parent = rhs.m_parent;
+        m_index = rhs.m_index;
     }
     if (m_type == Type::NORMAL) {
         m_indentations = rhs.m_indentations;
@@ -253,8 +257,9 @@ void Cube::set_type(const Type new_type) {
         break;
     case Type::OCTANT:
         const float half_size = m_size / 2;
+        uint8_t index = 0;
         auto create_cube = [&](const glm::vec3 &offset) {
-            return std::make_shared<Cube>(weak_from_this(), Type::SOLID, half_size, m_position + offset);
+            return std::make_shared<Cube>(weak_from_this(), index++, Type::SOLID, half_size, m_position + offset);
         };
         // about the order look into the octree documentation
         m_childs = {create_cube({0, 0, 0}),
