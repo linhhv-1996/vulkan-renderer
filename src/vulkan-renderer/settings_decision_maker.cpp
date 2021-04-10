@@ -408,9 +408,9 @@ std::optional<VkPhysicalDevice> VulkanSettingsDecisionMaker::decide_which_graphi
 
             // Neither the integrated GPU nor the discrete GPU are suitable!
             return std::nullopt;
-        } else {
-            spdlog::debug("Only discrete GPUs available, no integrated graphics.");
         }
+        
+        spdlog::debug("Only discrete GPUs available, no integrated graphics.");
     }
 
     /// ATTEMPT 4
