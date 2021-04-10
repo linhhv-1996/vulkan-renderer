@@ -16,8 +16,6 @@ std::uint32_t VulkanSettingsDecisionMaker::decide_how_many_images_in_swapchain_t
 
     spdlog::debug("Deciding automatically how many images in swapchain to use.");
 
-    std::uint32_t number_of_images_in_swapchain = 0;
-
     VkSurfaceCapabilitiesKHR surface_capabilities{};
 
     if (const auto result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(graphics_card, surface, &surface_capabilities);
@@ -28,7 +26,7 @@ std::uint32_t VulkanSettingsDecisionMaker::decide_how_many_images_in_swapchain_t
     // TODO: Refactor! How many images do we actually need? Is triple buffering the best option?
 
     // Determine how many images in swapchain to use.
-    number_of_images_in_swapchain = surface_capabilities.minImageCount + 1;
+    std::uint32_t number_of_images_in_swapchain = surface_capabilities.minImageCount + 1;
 
     // If the maximum number of images available in swapchain is greater than our current number, chose it.
     if ((surface_capabilities.maxImageCount > 0) &&
