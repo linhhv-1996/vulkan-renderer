@@ -82,10 +82,13 @@ VulkanSettingsDecisionMaker::decide_which_surface_color_format_in_swapchain_to_u
         // Currently we use VK_FORMAT_B8G8R8A8_UNORM only, since it's the norm.
         std::vector<VkFormat> accepted_formats = {
             VK_FORMAT_B8G8R8A8_UNORM
-            // Add more accepted formats here..
+            // TODO: Add more accepted formats here..
         };
 
-        bool found_acceptable_format = false;
+        // In case VK_FORMAT_B8G8R8A8_UNORM is not available select the first available color format.
+        if (!available_surface_formats.empty()) {
+            return available_surface_formats[0];
+        }
 
         // Loop through the list of available surface formats and compare with the list of acceptable formats.
         for (auto &surface_format : available_surface_formats) {
@@ -93,23 +96,9 @@ VulkanSettingsDecisionMaker::decide_which_surface_color_format_in_swapchain_to_u
                 if (surface_format.format == accepted_format) {
                     accepted_color_format.format = surface_format.format;
                     accepted_color_format.colorSpace = surface_format.colorSpace;
-
-                    found_acceptable_format = true;
-
-                    return accepted_color_format;
+                    return surface_format;
                 }
             }
-        }
-
-        // In case VK_FORMAT_B8G8R8A8_UNORM is not available select the first available color format.
-        if (!found_acceptable_format) {
-            if (!available_surface_formats.empty()) {
-                accepted_color_format.format = available_surface_formats[0].format;
-                accepted_color_format.colorSpace = available_surface_formats[0].colorSpace;
-
-                return accepted_color_format;
-            }
-            return std::nullopt;
         }
     }
 
