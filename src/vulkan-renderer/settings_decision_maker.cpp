@@ -541,8 +541,7 @@ VulkanSettingsDecisionMaker::find_composite_alpha_format(VkPhysicalDevice select
     for (const auto &composite_alpha_flag : composite_alpha_flags) {
         if (static_cast<bool>(surface_capabilities.supportedCompositeAlpha & composite_alpha_flag)) {
             return composite_alpha_flag;
-            break;
-        };
+        }
     }
 
     return std::nullopt;
