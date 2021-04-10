@@ -338,12 +338,11 @@ VulkanSettingsDecisionMaker::decide_which_graphics_card_to_use(VkInstance vulkan
         const VkPhysicalDeviceType gpu_type_1 = graphics_card_type(available_gpus[0]);
         const VkPhysicalDeviceType gpu_type_2 = graphics_card_type(available_gpus[1]);
 
-        if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_1 || VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_2) {
+        if (gpu_type_1 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || gpu_type_2 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             discrete_gpu_exists = true;
         }
 
-        if (VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU == gpu_type_1 ||
-            VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU == gpu_type_2) {
+        if (gpu_type_1 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || gpu_type_2 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             integrated_gpu_exists = true;
         }
 
@@ -352,10 +351,10 @@ VulkanSettingsDecisionMaker::decide_which_graphics_card_to_use(VkInstance vulkan
             VkPhysicalDevice discrete_gpu{nullptr};
             VkPhysicalDevice integrated_gpu{nullptr};
 
-            if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_1) {
+            if (gpu_type_1 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 discrete_gpu = available_gpus[0];
                 integrated_gpu = available_gpus[1];
-            } else if (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU == gpu_type_2) {
+            } else if (gpu_type_2 == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 // The other way around.
                 discrete_gpu = available_gpus[1];
                 integrated_gpu = available_gpus[0];
