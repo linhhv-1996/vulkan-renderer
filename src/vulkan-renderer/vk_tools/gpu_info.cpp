@@ -43,19 +43,19 @@ void print_physical_device_queue_families(const VkPhysicalDevice graphics_card) 
         spdlog::debug("Queue count: {}", queue_family_properties[i].queueCount);
         spdlog::debug("Timestamp valid bits: {}", queue_family_properties[i].timestampValidBits);
 
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if ((queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
             spdlog::debug("VK_QUEUE_GRAPHICS_BIT");
         }
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+        if ((queue_family_properties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0) {
             spdlog::debug("VK_QUEUE_COMPUTE_BIT");
         }
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+        if ((queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0) {
             spdlog::debug("VK_QUEUE_TRANSFER_BIT");
         }
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+        if ((queue_family_properties[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) != 0) {
             spdlog::debug("VK_QUEUE_SPARSE_BINDING_BIT");
         }
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_PROTECTED_BIT) {
+        if ((queue_family_properties[i].queueFlags & VK_QUEUE_PROTECTED_BIT) != 0) {
             spdlog::debug("VK_QUEUE_PROTECTED_BIT");
         }
 
@@ -338,28 +338,28 @@ void print_physical_device_memory_properties(const VkPhysicalDevice graphics_car
 
         const auto &property_flag = gpu_memory_properties.memoryTypes[i].propertyFlags;
 
-        if (property_flag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_HOST_COHERENT_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_HOST_CACHED_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
+        if ((property_flag & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_PROTECTED_BIT");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
+        if ((property_flag & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD");
         }
-        if (property_flag & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) {
+        if ((property_flag & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) != 0) {
             spdlog::debug("VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD");
         }
     }
@@ -369,10 +369,10 @@ void print_physical_device_memory_properties(const VkPhysicalDevice graphics_car
 
         const auto &property_flag = gpu_memory_properties.memoryHeaps[i].flags;
 
-        if (property_flag & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+        if ((property_flag & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0) {
             spdlog::debug("VK_MEMORY_HEAP_DEVICE_LOCAL_BIT ");
         }
-        if (property_flag & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) {
+        if ((property_flag & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0) {
             spdlog::debug("VK_MEMORY_HEAP_MULTI_INSTANCE_BIT");
         }
     }
