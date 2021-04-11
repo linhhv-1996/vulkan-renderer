@@ -23,11 +23,11 @@ float BezierCurve::bernstein_polynomial(std::uint32_t n, std::uint32_t k, const 
 }
 
 void BezierCurve::clear_output() {
-    std::vector<BezierOutputPoint> output_points;
+    m_output_points.clear();
 }
 
 void BezierCurve::clear_input() {
-    std::vector<BezierInputPoint> input_points;
+    m_input_points.clear();
 }
 
 void BezierCurve::clear() {
