@@ -4,8 +4,9 @@ namespace inexor::vulkan_renderer {
 
 std::uint32_t BezierCurve::binomial_coefficient(std::uint32_t n, const std::uint32_t k) {
     std::uint32_t r = 1;
-    if (k > n)
+    if (k > n) {
         return 0;
+    }
 
     for (std::uint32_t d = 1; d <= k; d++) {
         r *= n--;
