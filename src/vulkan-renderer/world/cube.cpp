@@ -324,6 +324,8 @@ void Cube::rotate(const RotationAxis::Type &axis, int rotations) {
     case 3:
         rotate<3>(axis);
         break;
+    default:
+        break;
     }
 }
 
