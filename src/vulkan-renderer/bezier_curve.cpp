@@ -60,13 +60,13 @@ void BezierCurve::add_input_point(const glm::vec3 &position, const float weight)
 BezierOutputPoint BezierCurve::calculate_point_on_curve(const float curve_precision) {
     BezierOutputPoint temp_output;
 
-    const std::uint32_t n = static_cast<std::uint32_t>(m_input_points.size() - 1);
+    const auto n = static_cast<std::uint32_t>(m_input_points.size() - 1);
 
     // Calculate the coordinates of the output points of the bezier curve.
     for (std::size_t i = 0; i < m_input_points.size(); i++) {
         auto current_point = m_input_points[i];
 
-        const std::uint32_t index = static_cast<std::uint32_t>(i);
+        const auto index = static_cast<std::uint32_t>(i);
 
         // Compute bezier curve coordinates using bernstein polynomials.
         temp_output.pos.x += bernstein_polynomial(n, index, curve_precision, current_point.pos.x);
@@ -85,7 +85,7 @@ BezierOutputPoint BezierCurve::calculate_point_on_curve(const float curve_precis
         auto current_point = m_input_points[i];
         auto next_point = m_input_points[i + 1];
 
-        const std::uint32_t index = static_cast<std::uint32_t>(i);
+        const auto index = static_cast<std::uint32_t>(i);
 
         // Compute bezier curve point's first derivative.
         temp_output.tangent.x += bernstein_polynomial(n - 1, index, curve_precision, current_point.pos.x);
