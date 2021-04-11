@@ -89,7 +89,9 @@ public:
 
     void clear();
 
-    [[nodiscard]] bool is_curve_generated();
+    [[nodiscard]] bool is_curve_generated() const {
+        return m_curve_generated;
+    }
 };
 
 } // namespace inexor::vulkan_renderer

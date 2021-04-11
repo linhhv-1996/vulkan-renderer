@@ -35,10 +35,6 @@ void BezierCurve::clear() {
     clear_output();
 }
 
-bool BezierCurve::is_curve_generated() {
-    return m_curve_generated;
-}
-
 std::vector<BezierOutputPoint> BezierCurve::output_points() {
     assert(m_curve_generated);
     assert(m_output_points.size() > 0);
