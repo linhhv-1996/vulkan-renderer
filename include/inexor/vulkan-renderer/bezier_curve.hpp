@@ -70,7 +70,7 @@ class BezierCurve {
 
     static uint32_t binomial_coefficient(uint32_t n, uint32_t k);
 
-    float bernstein_polynomial(uint32_t n, uint32_t k, float curve_precision, float coordinate_value);
+    static float bernstein_polynomial(uint32_t n, uint32_t k, float curve_precision, float coordinate_value);
 
     BezierOutputPoint calculate_point_on_curve(float curve_precision);
 
