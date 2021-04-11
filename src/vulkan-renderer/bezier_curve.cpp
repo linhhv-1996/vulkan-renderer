@@ -37,7 +37,7 @@ void BezierCurve::clear() {
 
 std::vector<BezierOutputPoint> BezierCurve::output_points() {
     assert(m_curve_generated);
-    assert(m_output_points.size() > 0);
+    assert(!m_output_points.empty());
     return m_output_points;
 }
 
