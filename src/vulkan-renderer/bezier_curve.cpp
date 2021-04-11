@@ -113,7 +113,7 @@ BezierOutputPoint BezierCurve::calculate_point_on_curve(const float curve_precis
     return temp_output;
 }
 
-void BezierCurve::calculate_bezier_curve(const float curve_precision) {
+void BezierCurve::calculate_bezier_curve(const uint32_t curve_segments) {
     // We need at least 2 input points!
     assert(m_input_points.size() > 2);
 
@@ -122,11 +122,8 @@ void BezierCurve::calculate_bezier_curve(const float curve_precision) {
         m_curve_generated = false;
     }
 
-    const float curve_precision_interval = 1.0f / curve_precision;
-
-    for (float position_on_curve = 0.0f; position_on_curve <= 1.0f; position_on_curve += curve_precision_interval) {
-        const BezierOutputPoint temp_output = calculate_point_on_curve(position_on_curve);
-        m_output_points.push_back(temp_output);
+    for (std::uint32_t i = 0; i < curve_segments; i += curve_segments / static_cast<std::uint32_t>(1000)) {
+        m_output_points.push_back(calculate_point_on_curve(static_cast<float>(i) / static_cast<float>(curve_segments)));
     }
 
     m_curve_generated = true;

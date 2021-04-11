@@ -79,7 +79,7 @@ public:
 
     void add_input_point(const glm::vec3 &position, float weight = 1.0f);
 
-    void calculate_bezier_curve(float curve_precision);
+    void calculate_bezier_curve(std::uint32_t curve_segments);
 
     [[nodiscard]] std::vector<BezierOutputPoint> output_points();
 
