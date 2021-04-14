@@ -5,6 +5,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <utility>
+
 namespace inexor::vulkan_renderer::wrapper {
 
 DescriptorBuilder::DescriptorBuilder(const Device &device, std::uint32_t swapchain_image_count)
