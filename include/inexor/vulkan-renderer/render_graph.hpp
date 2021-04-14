@@ -379,7 +379,7 @@ private:
     // Helper function used to create a physical resource during render graph compilation.
     // TODO: Use concepts when we switch to C++ 20.
     template <typename T, typename... Args, std::enable_if_t<std::is_base_of_v<PhysicalResource, T>, int> = 0>
-    T *create(const RenderResource *resource, Args &&... args) {
+    T *create(const RenderResource *resource, Args &&...args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         auto *ret = ptr.get();
         m_resource_map.emplace(resource, std::move(ptr));
@@ -389,7 +389,7 @@ private:
     // Helper function used to create a physical stage during render graph compilation.
     // TODO: Use concepts when we switch to C++ 20.
     template <typename T, typename... Args, std::enable_if_t<std::is_base_of_v<PhysicalStage, T>, int> = 0>
-    T *create(const RenderStage *stage, Args &&... args) {
+    T *create(const RenderStage *stage, Args &&...args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         auto *ret = ptr.get();
         m_stage_map.emplace(stage, std::move(ptr));
@@ -417,7 +417,7 @@ public:
     /// @brief Adds either a render resource or render stage to the render graph
     /// @return A mutable reference to the just-added resource or stage
     template <typename T, typename... Args>
-    T &add(Args &&... args) {
+    T &add(Args &&...args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         auto &ret = *ptr;
         if constexpr (std::is_base_of_v<RenderResource, T>) {
