@@ -34,11 +34,7 @@ class Application : public VulkanRenderer {
 
     std::unique_ptr<input::KeyboardMouseInputData> m_input_data;
 
-    // Let's just create 2 worlds for testing now.
-    // TODO: Remove this again.
     std::array<std::shared_ptr<world::Cube>, 3> m_worlds;
-    std::vector<std::shared_ptr<world::Cube>> m_helper_box;
-    std::vector<glm::vec3> helper_box_positions;
 
     // If the user specified command line argument "--stop-on-validation-message", the program will call std::abort();
     // after reporting a validation layer (error) message.
