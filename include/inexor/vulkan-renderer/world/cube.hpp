@@ -6,7 +6,6 @@
 #include <glm/vec3.hpp>
 
 #include <array>
-#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -134,7 +133,7 @@ public:
 
     [[nodiscard]] float squared_distance(const glm::vec3 pos) const {
         const auto diff = center() - pos;
-        return static_cast<float>(std::pow(glm::dot(diff, diff), 2));
+        return static_cast<float>(glm::pow(glm::dot(diff, diff), 2));
     }
 
     /// Set a new type.
