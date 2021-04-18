@@ -17,7 +17,7 @@ TEST(CubeCollision, CollisionCheck) {
     bool collision_found = collision1.has_value();
 
     // There must be no collision for this data setup.
-    ASSERT_EQ(collision_found, false);
+    EXPECT_FALSE(collision_found);
 
     cam_direction = {0.0f, 0.0f, -1.0f};
 
@@ -25,7 +25,7 @@ TEST(CubeCollision, CollisionCheck) {
     collision_found = collision2.has_value();
 
     // Since we are now directly looking down on the cube, we collide with it.
-    ASSERT_EQ(collision_found, true);
+    EXPECT_TRUE(collision_found);
 }
 
 } // namespace inexor::vulkan_renderer
