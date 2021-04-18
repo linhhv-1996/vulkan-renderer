@@ -14,7 +14,7 @@ static void BM_CubeCollision(benchmark::State &state) {
         glm::vec3 cam_direction{0.0f, 0.0f, -1.0f};
 
         world::OctreeCollisionQuery collision_check(world);
-        auto collision = collision_check.check_for_collision(cam_pos, cam_direction);
+        benchmark::DoNotOptimize(collision_check.check_for_collision(cam_pos, cam_direction));
     }
 }
 
