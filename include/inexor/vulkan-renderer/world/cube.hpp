@@ -3,6 +3,7 @@
 #include "inexor/vulkan-renderer/world/indentation.hpp"
 
 #include <glm/geometric.hpp>
+#include <glm/gtx/vector_angle.hpp>
 #include <glm/vec3.hpp>
 
 #include <array>
@@ -132,8 +133,7 @@ public:
     }
 
     [[nodiscard]] float squared_distance(const glm::vec3 pos) const {
-        const auto diff = center() - pos;
-        return glm::dot(diff, diff);
+        return glm::distance2(center(), pos);
     }
 
     /// Set a new type.
