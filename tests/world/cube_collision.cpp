@@ -28,4 +28,4 @@ TEST(CubeCollision, CollisionCheck) {
     ASSERT_EQ(collision_found, true);
 }
 
-}; // namespace inexor::vulkan_renderer
+} // namespace inexor::vulkan_renderer

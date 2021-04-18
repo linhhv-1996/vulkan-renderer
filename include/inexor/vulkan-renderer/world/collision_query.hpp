@@ -39,4 +39,4 @@ public:
     std::optional<RayCubeCollision<Cube>> check_for_collision(glm::vec3 pos, glm::vec3 dir);
 };
 
-}; // namespace inexor::vulkan_renderer::world
+} // namespace inexor::vulkan_renderer::world

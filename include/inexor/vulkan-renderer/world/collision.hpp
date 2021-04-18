@@ -245,4 +245,4 @@ public:
     }
 };
 
-}; // namespace inexor::vulkan_renderer::world
+} // namespace inexor::vulkan_renderer::world
