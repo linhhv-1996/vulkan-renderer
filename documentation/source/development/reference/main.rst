@@ -8,3 +8,4 @@ Reference
     gpu-selection
     binary-format-specification
     octree-file-format
+    octree-collision
