@@ -121,8 +121,8 @@ public:
         /// @param plane_norm The normal vector of the plane.
         /// @param ray_pos Point a on the ray.
         /// @param ray_dir Point b on the ray.
-        const auto ray_plane_intersection_point = [](const glm::vec3 plane_pos, const glm::vec3 plane_norm,
-                                                     const glm::vec3 ray_pos, const glm::vec3 ray_dir) {
+        const auto ray_plane_intersection_point = [&](const glm::vec3 &plane_pos, const glm::vec3 &plane_norm,
+                                                     const glm::vec3 &ray_pos, const glm::vec3 &ray_dir) {
             return ray_pos - ray_dir * (glm::dot((ray_pos - plane_pos), plane_norm) / glm::dot(ray_dir, plane_norm));
         };
 
@@ -137,7 +137,7 @@ public:
         /// distance, which allows us to avoid the costly call of ``sqrt``.
         /// @param pos1 The first point.
         /// @param pos2 The second point.
-        const auto square_of_distance = [](const std::array<glm::vec3, 2> points) {
+        const auto square_of_distance = [&](const std::array<glm::vec3, 2>& points) {
             const auto diff = points[1] - points[0];
             return static_cast<float>(std::pow(glm::dot(diff, diff), 2));
         };
