@@ -1,7 +1,5 @@
 #pragma once
 
-#include <inexor/vulkan-renderer/world/cube.hpp>
-
 #include <glm/geometric.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/vec3.hpp>
