@@ -133,7 +133,7 @@ public:
 
     [[nodiscard]] float squared_distance(const glm::vec3 pos) const {
         const auto diff = center() - pos;
-        return static_cast<float>(glm::pow(glm::dot(diff, diff), 2));
+        return glm::dot(diff, diff);
     }
 
     /// Set a new type.

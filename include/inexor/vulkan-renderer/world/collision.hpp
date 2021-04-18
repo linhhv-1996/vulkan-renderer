@@ -134,8 +134,8 @@ public:
         /// @param pos1 The first point.
         /// @param pos2 The second point.
         const auto square_of_distance = [&](const std::array<glm::vec3, 2> &points) {
-            const auto diff = points[1] - points[0];
-            return static_cast<float>(std::pow(glm::dot(diff, diff), 2));
+            const auto diff = points[0] - points[1];
+            return glm::dot(diff, diff);
         };
 
         float shortest_squared_distance{std::numeric_limits<float>::max()};
