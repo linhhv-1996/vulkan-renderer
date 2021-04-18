@@ -48,7 +48,7 @@ public:
             return m_cube.center() + pos * (m_cube.size() / 2);
         };
 
-        const std::array<glm::vec3, 6> cube_directions{
+        const std::array cube_directions{
             glm::vec3(-1.0f, 0.0f, 0.0f), // left
             glm::vec3(1.0f, 0.0f, 0.0f),  // right
             glm::vec3(0.0f, -1.0f, 0.0f), // front
@@ -58,28 +58,27 @@ public:
         };
 
         // The coordinates of the center of every face of the cube.
-        const std::array<cube_face, 6> cube_face_centers{cube_face{"left", adjust_coordinates(cube_directions[0])},
-                                                         cube_face{"right", adjust_coordinates(cube_directions[1])},
-                                                         cube_face{"front", adjust_coordinates(cube_directions[2])},
-                                                         cube_face{"back", adjust_coordinates(cube_directions[3])},
-                                                         cube_face{"top", adjust_coordinates(cube_directions[4])},
-                                                         cube_face{"bottom", adjust_coordinates(cube_directions[5])}};
+        const std::array cube_face_centers{cube_face{"left", adjust_coordinates(cube_directions[0])},
+                                           cube_face{"right", adjust_coordinates(cube_directions[1])},
+                                           cube_face{"front", adjust_coordinates(cube_directions[2])},
+                                           cube_face{"back", adjust_coordinates(cube_directions[3])},
+                                           cube_face{"top", adjust_coordinates(cube_directions[4])},
+                                           cube_face{"bottom", adjust_coordinates(cube_directions[5])}};
 
         // The coordinates of every corner of the cube.
-        std::array<cube_corner, 8> cube_corners = {
-            cube_corner{"left back top", adjust_coordinates({-1.0f, 1.0f, 1.0f})},
-            cube_corner{"right back top", adjust_coordinates({1.0f, 1.0f, 1.0f})},
-            cube_corner{"left back botom", adjust_coordinates({-1.0f, 1.0f, -1.0f})},
-            cube_corner{"right back bottom", adjust_coordinates({1.0f, 1.0f, -1.0f})},
-            cube_corner{"left front top", adjust_coordinates({-1.0f, -1.0f, 1.0f})},
-            cube_corner{"right front top", adjust_coordinates({1.0f, -1.0f, 1.0f})},
-            cube_corner{"left front bottom", adjust_coordinates({-1.0f, -1.0f, -1.0f})},
-            cube_corner{"right front bottom", adjust_coordinates({1.0f, -1.0f, -1.0f})}};
+        std::array cube_corners = {cube_corner{"left back top", adjust_coordinates({-1.0f, 1.0f, 1.0f})},
+                                   cube_corner{"right back top", adjust_coordinates({1.0f, 1.0f, 1.0f})},
+                                   cube_corner{"left back botom", adjust_coordinates({-1.0f, 1.0f, -1.0f})},
+                                   cube_corner{"right back bottom", adjust_coordinates({1.0f, 1.0f, -1.0f})},
+                                   cube_corner{"left front top", adjust_coordinates({-1.0f, -1.0f, 1.0f})},
+                                   cube_corner{"right front top", adjust_coordinates({1.0f, -1.0f, 1.0f})},
+                                   cube_corner{"left front bottom", adjust_coordinates({-1.0f, -1.0f, -1.0f})},
+                                   cube_corner{"right front bottom", adjust_coordinates({1.0f, -1.0f, -1.0f})}};
 
         using corner_on_face_index = std::array<std::size_t, 4>;
 
         // These indices specify which 4 points describe the corners on the given face.
-        static constexpr std::array<corner_on_face_index, 6> CORNERS_ON_FACE_INDICES{
+        static constexpr std::array CORNERS_ON_FACE_INDICES{
             corner_on_face_index{0, 2, 4, 6}, // left
             corner_on_face_index{1, 3, 5, 7}, // right
             corner_on_face_index{4, 5, 6, 6}, // front
@@ -89,24 +88,23 @@ public:
         };
 
         // The coordinates of the center of every edge of the cube.
-        std::array<cube_edge, 12> cube_edges = {
-            cube_edge{"left top", adjust_coordinates({-1.0f, 0.0f, 1.0f})},
-            cube_edge{"left front", adjust_coordinates({-1.0f, 1.0f, 0.0f})},
-            cube_edge{"left bottom", adjust_coordinates({-1.0f, 0.0f, -1.0f})},
-            cube_edge{"left back", adjust_coordinates({-1.0f, -1.0f, 0.0f})},
-            cube_edge{"right top", adjust_coordinates({1.0f, 0.0f, 1.0f})},
-            cube_edge{"right front", adjust_coordinates({1.0f, 1.0f, 0.0f})},
-            cube_edge{"right bottom", adjust_coordinates({1.0f, 0.0f, -1.0f})},
-            cube_edge{"right back", adjust_coordinates({1.0f, -1.0f, 0.0f})},
-            cube_edge{"middle bottom front", adjust_coordinates({0.0f, -1.0f, -1.0f})},
-            cube_edge{"middle bottom back", adjust_coordinates({0.0f, 1.0f, -1.0f})},
-            cube_edge{"middle top front", adjust_coordinates({0.0f, -1.0f, 1.0f})},
-            cube_edge{"middle top back", adjust_coordinates({0.0f, 1.0f, 1.0f})}};
+        std::array cube_edges = {cube_edge{"left top", adjust_coordinates({-1.0f, 0.0f, 1.0f})},
+                                 cube_edge{"left front", adjust_coordinates({-1.0f, 1.0f, 0.0f})},
+                                 cube_edge{"left bottom", adjust_coordinates({-1.0f, 0.0f, -1.0f})},
+                                 cube_edge{"left back", adjust_coordinates({-1.0f, -1.0f, 0.0f})},
+                                 cube_edge{"right top", adjust_coordinates({1.0f, 0.0f, 1.0f})},
+                                 cube_edge{"right front", adjust_coordinates({1.0f, 1.0f, 0.0f})},
+                                 cube_edge{"right bottom", adjust_coordinates({1.0f, 0.0f, -1.0f})},
+                                 cube_edge{"right back", adjust_coordinates({1.0f, -1.0f, 0.0f})},
+                                 cube_edge{"middle bottom front", adjust_coordinates({0.0f, -1.0f, -1.0f})},
+                                 cube_edge{"middle bottom back", adjust_coordinates({0.0f, 1.0f, -1.0f})},
+                                 cube_edge{"middle top front", adjust_coordinates({0.0f, -1.0f, 1.0f})},
+                                 cube_edge{"middle top back", adjust_coordinates({0.0f, 1.0f, 1.0f})}};
 
         using edge_on_face_index = std::array<std::size_t, 4>;
 
         // These indices specify which 4 edges are associated with a given face.
-        static constexpr std::array<edge_on_face_index, 6> EDGE_ON_FACE_INDICES{
+        static constexpr std::array EDGE_ON_FACE_INDICES{
             edge_on_face_index{0, 1, 2, 3},   // left
             edge_on_face_index{4, 5, 6, 7},   // right
             edge_on_face_index{1, 5, 8, 11},  // front
@@ -122,7 +120,7 @@ public:
         /// @param ray_pos Point a on the ray.
         /// @param ray_dir Point b on the ray.
         const auto ray_plane_intersection_point = [&](const glm::vec3 &plane_pos, const glm::vec3 &plane_norm,
-                                                     const glm::vec3 &ray_pos, const glm::vec3 &ray_dir) {
+                                                      const glm::vec3 &ray_pos, const glm::vec3 &ray_dir) {
             return ray_pos - ray_dir * (glm::dot((ray_pos - plane_pos), plane_norm) / glm::dot(ray_dir, plane_norm));
         };
 
@@ -137,7 +135,7 @@ public:
         /// distance, which allows us to avoid the costly call of ``sqrt``.
         /// @param pos1 The first point.
         /// @param pos2 The second point.
-        const auto square_of_distance = [&](const std::array<glm::vec3, 2>& points) {
+        const auto square_of_distance = [&](const std::array<glm::vec3, 2> &points) {
             const auto diff = points[1] - points[0];
             return static_cast<float>(std::pow(glm::dot(diff, diff), 2));
         };
