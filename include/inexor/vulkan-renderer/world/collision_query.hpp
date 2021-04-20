@@ -1,7 +1,11 @@
 #pragma once
 
 #include "inexor/vulkan-renderer/world/collision.hpp"
-#include "inexor/vulkan-renderer/world/cube.hpp"
+
+// Forward declaration
+namespace inexor::vulkan_renderer::world {
+class Cube;
+} // namespace inexor::vulkan_renderer::world
 
 #include <glm/vec3.hpp>
 
