@@ -8,10 +8,7 @@
 #include <array>
 #include <limits>
 #include <memory>
-#include <optional>
-#include <string>
 #include <utility>
-#include <vector>
 
 namespace inexor::vulkan_renderer::world {
 

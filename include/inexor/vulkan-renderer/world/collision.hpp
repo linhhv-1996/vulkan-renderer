@@ -2,6 +2,7 @@
 
 #include <glm/vec3.hpp>
 
+#include <string>
 #include <tuple>
 
 namespace inexor::vulkan_renderer::world {
