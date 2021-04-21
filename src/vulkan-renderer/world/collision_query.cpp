@@ -33,11 +33,7 @@ bool OctreeCollisionQuery::ray_box_collision(const std::array<glm::vec3, 2> box_
     tzmin = (box_bounds[sign[2]].z - position.z) * inverse_dir.z;
     tzmax = (box_bounds[1 - sign[2]].z - position.z) * inverse_dir.z;
 
-    if ((tmin > tzmax) || (tzmin > tmax)) {
-        return false;
-    }
-
-    return true;
+    return !((tmin > tzmax) || (tzmin > tmax));
 }
 
 std::optional<RayCubeCollision<Cube>> OctreeCollisionQuery::check_for_collision(const glm::vec3 pos,
