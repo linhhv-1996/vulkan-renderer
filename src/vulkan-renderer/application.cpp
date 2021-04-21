@@ -5,7 +5,6 @@
 #include "inexor/vulkan-renderer/standard_ubo.hpp"
 #include "inexor/vulkan-renderer/tools/cla_parser.hpp"
 #include "inexor/vulkan-renderer/world/collision.hpp"
-#include "inexor/vulkan-renderer/world/collision_query.hpp"
 #include "inexor/vulkan-renderer/world/cube.hpp"
 #include "inexor/vulkan-renderer/wrapper/cpu_texture.hpp"
 #include "inexor/vulkan-renderer/wrapper/descriptor_builder.hpp"
@@ -196,17 +195,17 @@ void Application::load_shaders() {
 void Application::load_octree_geometry() {
     spdlog::debug("Creating octree geometry.");
 
-    // Let's just create 2 worlds for testing now.
-    // TODO: Remove this again.
-    m_worlds[0] = std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 5.0f, glm::vec3{10, 0, 0});
+    m_worlds.reserve(3);
 
-    // Create the second octree in another place so we don't have to deal with intersections yet.
-    // Create the second octree as a completely filled cube so we can test the easiest colliion case.
-    m_worlds[1] = std::make_shared<world::Cube>(world::Cube::Type::SOLID, 1.0f, glm::vec3{0, 0, 0});
+    m_worlds.emplace_back(std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 5.0f, glm::vec3{10, 0, 0}));
+    m_worlds.emplace_back(std::make_shared<world::Cube>(world::Cube::Type::SOLID, 1.0f, glm::vec3{0, 0, 0}));
+    m_worlds.emplace_back(std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 1.6f, glm::vec3{0, 10, 0}));
 
-    // Create the second octree in another place so we don't have to deal with intersections yet.
-    // Create the second octree as a completely filled cube so we can test the easiest colliion case.
-    m_worlds[2] = std::make_shared<world::Cube>(world::Cube::Type::OCTANT, 1.6f, glm::vec3{0, 10, 0});
+    m_collision_checks.reserve(m_worlds.size());
+
+    for (const auto &world : m_worlds) {
+        m_collision_checks.emplace_back(*world);
+    }
 
     m_worlds[0]->childs()[3]->set_type(world::Cube::Type::EMPTY);
     m_worlds[0]->childs()[5]->set_type(world::Cube::Type::EMPTY);
@@ -585,6 +584,31 @@ void Application::process_mouse_input() {
     m_camera->set_movement_state(CameraMovement::RIGHT, m_input_data->is_key_pressed(GLFW_KEY_D));
 }
 
+void Application::check_octree_collisions() {
+    // Check for collision between camera ray and every octree
+    for (auto &collision_check : m_collision_checks) {
+        const auto collision = collision_check.check_for_collision(m_camera->position(), m_camera->front());
+
+        if (collision) {
+            const auto intersection = collision.value().intersection();
+            const auto face_name = collision.value().face_name();
+            const auto face_normal = collision.value().face();
+            const auto corner = collision.value().corner();
+            const auto corner_name = collision.value().corner_name();
+            const auto edge_name = collision.value().edge_name();
+            const auto edge = collision.value().edge();
+
+            spdlog::trace("pos {} {} {} | face {} {} {} {} | corner {} {} {} {} | edge {} {} {} {}", intersection.x,
+                          intersection.y, intersection.z, face_normal.x, face_normal.y, face_normal.z,
+                          face_name.c_str(), corner.x, corner.y, corner.z, corner_name.c_str(), edge.x, edge.y, edge.z,
+                          edge_name.c_str());
+
+            // Break after one collision.
+            break;
+        }
+    }
+}
+
 void Application::run() {
     spdlog::debug("Running Application.");
 
@@ -598,29 +622,7 @@ void Application::run() {
         process_mouse_input();
         m_camera->update(m_time_passed);
         m_time_passed = m_stopwatch.time_step();
-
-        // Check for collision between camera ray and every octree
-        for (auto &collision_test : collision_tests) {
-            const auto collision = collision_test.check_for_collision(m_camera->position(), m_camera->front());
-
-            if (collision) {
-                const auto intersection = collision.value().intersection();
-                const auto face_name = collision.value().face_name();
-                const auto face_normal = collision.value().face();
-                const auto corner = collision.value().corner();
-                const auto corner_name = collision.value().corner_name();
-                const auto edge_name = collision.value().edge_name();
-                const auto edge = collision.value().edge();
-
-                spdlog::trace("pos {} {} {} | face {} {} {} {} | corner {} {} {} {} | edge {} {} {} {}", intersection.x,
-                              intersection.y, intersection.z, face_normal.x, face_normal.y, face_normal.z,
-                              face_name.c_str(), corner.x, corner.y, corner.z, corner_name.c_str(), edge.x, edge.y,
-                              edge.z, edge_name.c_str());
-
-                // Break after one collision.
-                break;
-            }
-        }
+        check_octree_collisions();
     }
 }
 
