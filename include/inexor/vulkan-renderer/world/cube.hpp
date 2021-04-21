@@ -132,6 +132,8 @@ public:
         return m_size;
     }
 
+    /// @brief Calculate the square of the distance from the center of the cube to a given position.
+    /// @param pos The position of which the squared distance to the center of the cube will be calculated.
     [[nodiscard]] float squared_distance(const glm::vec3 pos) const {
         return glm::distance2(center(), pos);
     }
