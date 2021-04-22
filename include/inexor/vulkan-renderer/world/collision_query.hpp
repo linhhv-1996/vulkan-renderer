@@ -2,14 +2,14 @@
 
 #include "inexor/vulkan-renderer/world/collision.hpp"
 
+#include <glm/vec3.hpp>
+
+#include <optional>
+
 // Forward declaration
 namespace inexor::vulkan_renderer::world {
 class Cube;
 } // namespace inexor::vulkan_renderer::world
-
-#include <glm/vec3.hpp>
-
-#include <optional>
 
 namespace inexor::vulkan_renderer::world {
 
