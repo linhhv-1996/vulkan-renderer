@@ -7,7 +7,7 @@ Octree collision detection allows us to find intersections between octree geomet
     :width: 500
     :alt: Multiple octree worlds with different relative size.
 
-In the following screenshot, you can see three octrees of different types and different sizes. One octree is completely filled (we call this an ``Cube::Type::OCTANT`` in the engine). The one in the right has empty sub-cubes in it. You can see that these cubes are not indented at all, because indentation is not taken into account yet for octree collision. [#f1]_
+In the following screenshot, you can see three octrees of different types and different sizes. One octree is filled with 8 sub-cubes (we call a cube which has children``Cube::Type::OCTANT`` in the engine). The one in the right has some empty and some solid sub-cubes in it. You can see that these cubes are not indented at all, because indentation is not taken into account yet for octree collision. [#f1]_
 
 .. image:: octree_collision_multiple_octrees.jpg
     :width: 500
