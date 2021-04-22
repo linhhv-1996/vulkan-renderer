@@ -36,8 +36,9 @@ bool OctreeCollisionQuery::ray_box_collision(const std::array<glm::vec3, 2> box_
     return !((tmin > tzmax) || (tzmin > tmax));
 }
 
-std::optional<RayCubeCollision<Cube>> OctreeCollisionQuery::check_for_collision(const glm::vec3 pos,
-                                                                                const glm::vec3 dir) {
+std::optional<RayCubeCollision<Cube>>
+OctreeCollisionQuery::check_for_collision(const glm::vec3 pos, const glm::vec3 dir,
+                                          const std::optional<std::uint32_t> max_depth) {
     // If the cube is empty, a collision with a ray is not possible,
     // and there are no sub cubes to check for collision either.
     if (m_cube.type() == Cube::Type::EMPTY) {
@@ -76,11 +77,25 @@ std::optional<RayCubeCollision<Cube>> OctreeCollisionQuery::check_for_collision(
         float m_nearest_square_distance = std::numeric_limits<float>::max();
         auto subcubes = m_cube.childs();
 
+        if (max_depth.has_value()) {
+            // Check if the maximum depth is reached.
+            if (max_depth.value() == 0) {
+                // The current cube is of type OCTANT but not of type SOLID, but since we reached the maximum depth of
+                // iteration, we treat it as type SOLID.
+                return std::make_optional<RayCubeCollision<Cube>>(m_cube, pos, dir);
+            }
+        }
+
         // Iterate through all sub cubes and check for collision.
         for (std::int32_t i = 0; i < 8; i++) {
             if (subcubes[i]->type() != Cube::Type::EMPTY) {
                 OctreeCollisionQuery subcollision(*subcubes[i]);
-                if (subcollision.check_for_collision(pos, dir)) {
+
+                const std::optional<std::uint32_t> next_depth =
+                    max_depth.has_value() ? std::make_optional<std::uint32_t>(max_depth.value() - 1) : std::nullopt;
+
+                // No value for maximum depth given. Continue iterating until you find a leaf node of type SOLID.
+                if (subcollision.check_for_collision(pos, dir, next_depth)) {
                     hit_candidate_count++;
 
                     // If a ray collides with an octant, it can collide with multiple child cubes as it goes
