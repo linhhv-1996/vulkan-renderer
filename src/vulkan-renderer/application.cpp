@@ -587,7 +587,7 @@ void Application::process_mouse_input() {
 void Application::check_octree_collisions() {
     // Check for collision between camera ray and every octree
     for (auto &collision_check : m_collision_checks) {
-        const auto collision = collision_check.check_for_collision(m_camera->position(), m_camera->front(), 0);
+        const auto collision = collision_check.check_for_collision(m_camera->position(), m_camera->front());
 
         if (collision) {
             const auto intersection = collision.value().intersection();
