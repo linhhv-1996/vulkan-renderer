@@ -80,6 +80,11 @@ OctreeCollisionQuery::check_for_collision(const glm::vec3 pos, const glm::vec3 d
         if (max_depth.has_value()) {
             // Check if the maximum depth is reached.
             if (max_depth.value() == 0) {
+                // If the maximum depth is reached but the cube is empty, no collision was found.
+                if(m_cube.type() == Cube::Type::EMPTY) {
+                    return std::nullopt;
+                }
+
                 // The current cube is of type OCTANT but not of type SOLID, but since we reached the maximum depth of
                 // iteration, we treat it as type SOLID.
                 return std::make_optional<RayCubeCollision<Cube>>(m_cube, pos, dir);
@@ -116,7 +121,9 @@ OctreeCollisionQuery::check_for_collision(const glm::vec3 pos, const glm::vec3 d
             }
         }
 
-        return std::make_optional<RayCubeCollision<Cube>>(*subcubes[collision_subcube_index], pos, dir);
+        if (hit_candidate_count > 0) {
+            return std::make_optional<RayCubeCollision<Cube>>(*subcubes[collision_subcube_index], pos, dir);
+        }
     }
 
     // No collision found.
