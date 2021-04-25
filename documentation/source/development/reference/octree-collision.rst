@@ -48,7 +48,7 @@ If we have :math:`0` collisions, we can already stop collision detection here be
     :width: 500
     :alt: False positive intersection of a bounding sphere.
 
-We now need to find the world which is closest the camera. The first thing which comes to our mind is sorting the octrees by distance to the camera: we could calculate the distance :math:`d` between camera's position and bounding sphere's center (= the world's center) for every one world which intersects with the camera ray and order them by distance:
+We now need to find the world which is closest the camera. Even if the camera is inside of an octree, there could be multiple octrees which have bounding spheres that intersect the camera ray. The first thing which comes to our mind is sorting the octrees by distance to the camera: we could calculate the distance :math:`d` between camera's position and bounding sphere's center (= the world's center) for every one world which intersects with the camera ray and order them by distance:
 
 :math:`d = \sqrt{(x_1 - x_2)^2 +(y_1 - y_2)^2 +(z_1 - z_2)^2}`
 
