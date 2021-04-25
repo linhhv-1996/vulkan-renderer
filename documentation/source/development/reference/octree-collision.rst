@@ -36,6 +36,9 @@ Assuming we have :math:`N` octrees, the first thing we do is to iterate through 
 .. note::
     Simply iterating through all :math:`N` octrees is a naive approach. This only works for small number of octrees. Much better would be to use a hierarchical data structure like a `bounding volume hierarchy <https://en.wikipedia.org/wiki/Bounding_volume_hierarchy>`__, which groups objects which are close to each other into a unified bounding sphere. This hierarchical bounding sphere check is much faster than iterating through all :math:`N` octrees. There are libraries which could help implement this for Inexor in the future.
 
+.. note::
+    Currently we use the entire octree as axis aligned bounding box (aabb). However, we could optimize this: We could fit the bounding box to only the filled cubes of that octree. For example if one half side of the octree is empty, we could adjust the bounding box to the other half. If a camera ray now collides with the empty part of the octree, this could give us improved performance, as the bounding box is not hit. Otherwise the subcube iteration would come to the same conclusion: only empty subcubes are hit and therefore no collision takes place.
+
 After this step, we have :math:`0` to :math:`N` octrees which collide with the ray. The following screenshot shows the possible situations for :math:`N=3`:
 
 .. image:: octree_collision_cases.jpg
