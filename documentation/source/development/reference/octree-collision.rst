@@ -7,13 +7,13 @@ Octree collision detection allows us to find intersections between octree geomet
     :width: 500
     :alt: Multiple octree worlds with different relative size.
 
-In the following screenshot, you can see three octrees of different types and different sizes. One octree is filled with 8 sub-cubes (we call a cube which has children``Cube::Type::OCTANT`` in the engine). The one in the right has some empty and some solid sub-cubes in it. You can see that these cubes are not indented at all, because indentation is not taken into account yet for octree collision. [#f1]_
+In the following screenshot, you can see three octrees of different types and different sizes. One octree is filled with 8 sub-cubes (we call a cube which has children ``Cube::Type::OCTANT`` in the engine). The one in the right has some empty and some solid sub-cubes in it. You can see that these cubes are not indented at all, because indentation is not taken into account yet for octree collision. [#f1]_
 
 .. image:: octree_collision_multiple_octrees.jpg
     :width: 500
     :alt: Multiple octrees with different relative size.
 
-How to find collisions between octree geometry and a rays in this scene now? For simplicity, we assume that the octrees are not intersecting each other. Let's assume we want to write an octree editor. We are obviously only interested in the intersection which is closest to the camera's position: if there is another octree world behind the current selection, we must move the camera to it: [#f3]_
+How to find collisions between octree geometry and a rays in this scene now? For simplicity, we assume that the octrees are not intersecting each other. Let's assume we want to write an octree editor. We are obviously only interested in the intersection which is closest to the camera's position: if there is another octree world behind the current selection, we must move the camera to it: [#f2]_
 
 .. image:: octree_collision_camera_view_blocked.jpg
     :width: 500
@@ -61,7 +61,7 @@ The one with the lowest distance will be the one which is closest to the camera.
 The square of the distance
 --------------------------
 
-First, we do not need to sort the octrees by distance. Sorting would mean we need all of the data sorted by distance. We are only interested in the world with the smallest distance though. Since we iterate through all of them, we check if the calculated distance :math:`d` between bounding sphere's center and camera position is smaller than the stored value, and if that is the case, store it as the new closest world. [#f4]_ This is significantly faster than sorting all octrees. We also lose information about the distance to all the other octrees in selection, but that's not important at the moment (at least for the octree editor that is irrelevant for now). As a second optimization, we should not calculate the distance :math:`d` between the bounding sphere's center and the camera's center, as we are not interested in the exact value of the distance. The reason we should avoid this is because distance calculation using `glm::distance <https://glm.g-truc.net/0.9.4/api/a00131.html#ga3fac0e61144f60184d961dd156709dd3>`__ makes an expensive `sqrt <https://www.cplusplus.com/reference/cmath/sqrt/>`__ call, as it needs to calculate the distance like this:
+First, we do not need to sort the octrees by distance. Sorting would mean we need all of the data sorted by distance. We are only interested in the world with the smallest distance though. Since we iterate through all of them, we check if the calculated distance :math:`d` between bounding sphere's center and camera position is smaller than the stored value, and if that is the case, store it as the new closest world. [#f3]_ This is significantly faster than sorting all octrees. We also lose information about the distance to all the other octrees in selection, but that's not important at the moment (at least for the octree editor that is irrelevant for now). As a second optimization, we should not calculate the distance :math:`d` between the bounding sphere's center and the camera's center, as we are not interested in the exact value of the distance. The reason we should avoid this is because distance calculation using `glm::distance <https://glm.g-truc.net/0.9.4/api/a00131.html#ga3fac0e61144f60184d961dd156709dd3>`__ makes an expensive `sqrt <https://www.cplusplus.com/reference/cmath/sqrt/>`__ call, as it needs to calculate the distance like this:
 
 :math:`d = \sqrt{(x_1 - x_2)^2 +(y_1 - y_2)^2 +(z_1 - z_2)^2}`
 
@@ -89,7 +89,7 @@ If the octree's root is of type ``Cube::Type::OCTANT``, we need to iterate throu
     :width: 500
     :alt: An octree of type ``Cube::Type::OCTANT``.
 
-Please note that every octant has 8 sub-cubes, even if some (or even all) of them are of type ``Cube::Type::EMPTY``. [#f5]_
+Please note that every octant has 8 sub-cubes, even if some (or even all) of them are of type ``Cube::Type::EMPTY``. [#f4]_
 
 .. note::
     Technically, the octree's root could also be of type ``Cube::Type::EMPTY``. In this case, there also no collision possible. However, such octrees will be skipped when iterating through all possible sub-cubes which could possibly collide with the ray.
@@ -118,9 +118,9 @@ However, we can simplify this: If the angle is slightly greater than ``90 degree
 
 :math:`\alpha < 0` for :math:`\vec{a}\cdot\vec{b} < 0`
 
-This is quite nice, because the dot product of :math:`\vec{a}` and :math:`\vec{b}` is a cheap calculation. This is another very popular trick in computer graphics. [#f6]_
+This is quite nice, because the dot product of :math:`\vec{a}` and :math:`\vec{b}` is a cheap calculation. This is another very popular trick in computer graphics. [#f5]_
 
-We now simply iterate through all 6 faces of the cube, take the normal vector on that cube face and check if it's facing the camera. We are only interested in the planes which are facing the camera. [#f7]_ If you look at a cube, no more than 3 sides can be visible at the same time. This means we can stop after we found 3 cube sides which are facing the camera. It could be less than 3 sides though. Imagine you are right on top of a solid cube and your look down on it, only the top side is visible. If you look from a certain position, only 2 sides are visible.
+We now simply iterate through all 6 faces of the cube, take the normal vector on that cube face and check if it's facing the camera. We are only interested in the planes which are facing the camera. [#f6]_ If you look at a cube, no more than 3 sides can be visible at the same time. This means we can stop after we found 3 cube sides which are facing the camera. It could be less than 3 sides though. Imagine you are right on top of a solid cube and your look down on it, only the top side is visible. If you look from a certain position, only 2 sides are visible.
 
 .. image:: octree_collision_cube_facing_camera.jpg
     :width: 500
@@ -157,14 +157,14 @@ With this algorithm, we have a good starting point writing an octree editor. How
 
 .. rubric:: Footnotes
 
-.. [f1] The current implementation of octree-ray intersection only checks for intersections with completely filled cubes and does not take into account indentations of cubes, as this is not required for an octree editor. The bounding box of an octree is always unchanged, even if the octree geometry itself has indentations. Taking into account indentations will be required for physics calculations in the future, for example to check collisions between particles and octree.
+.. [#f1] The current implementation of octree-ray intersection only checks for intersections with completely filled cubes and does not take into account indentations of cubes, as this is not required for an octree editor. The bounding box of an octree is always unchanged, even if the octree geometry itself has indentations. Taking into account indentations will be required for physics calculations in the future, for example to check collisions between particles and octree.
 
-.. [f2] We could also make the layer which is blocking view invisible for a moment in the future.
+.. [#f2] We could also make the layer which is blocking view invisible for a moment in the future.
 
-.. [f4] To do so, we need to set the initial value of the distance to a maximum value. We use ``std::numeric_limits<float>::max()``
+.. [#f3] To do so, we need to set the initial value of the distance to a maximum value. We use ``std::numeric_limits<float>::max()``
 
-.. [f5] This has to do with the way the engine lays out memory for the octree data structure. The engine will allocate memory for the empty sub-cube because it's faster to change the sub-cube's data if it gets modified. However, empty sub-cubes will not result in additional vertex or index data being generated.
+.. [#f4] This has to do with the way the engine lays out memory for the octree data structure. The engine will allocate memory for the empty sub-cube because it's faster to change the sub-cube's data if it gets modified. However, empty sub-cubes will not result in additional vertex or index data being generated.
 
-.. [f6] In fact this is used during the rasterization step in rendering to discard all triangles which are not facing the camera.
+.. [#f5] In fact this is used during the rasterization step in rendering to discard all triangles which are not facing the camera.
 
-.. [f7] For some reasons we might be interested in those sides of a cube which are not facing the camera in the future?
+.. [#f6] For some reasons we might be interested in those sides of a cube which are not facing the camera in the future?
