@@ -63,6 +63,17 @@ foreach(FILE ${INEXOR_SOURCE_FILES})
     source_group("${GROUP}" FILES "${FILE}")
 endforeach()
 
+find_package(glfw3 REQUIRED CONFIG)
+find_package(glm REQUIRED CONFIG)
+find_package(imgui REQUIRED CONFIG)
+find_package(nlohmann_json REQUIRED CONFIG)
+find_package(spdlog REQUIRED CONFIG)
+find_package(stb REQUIRED CONFIG)
+find_package(TinyGLTF REQUIRED CONFIG)
+find_package(toml11 REQUIRED CONFIG)
+find_package(VulkanHeaders REQUIRED CONFIG)
+find_package(vulkan-memory-allocator REQUIRED CONFIG)
+
 add_library(inexor-vulkan-renderer ${INEXOR_SOURCE_FILES})
 
 add_dependencies(inexor-vulkan-renderer inexor-shaders)
@@ -104,31 +115,20 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/third_party
 )
 
-if(CONAN_LIBS)
-    target_link_libraries(
-        inexor-vulkan-renderer
+target_link_libraries(
+    inexor-vulkan-renderer
 
-        PUBLIC
-        ${CONAN_LIBS}
-        Vulkan::Vulkan
-    )
-else()
-    foreach(_LIB ${CONAN_LIBS_RELEASE})
-        target_link_libraries(
-            inexor-vulkan-renderer
-            optimized
+    PUBLIC
+    glfw::glfw
+    glm::glm
+    imgui::imgui
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+    stb::stb
+    TinyGLTF::TinyGLTF
+    toml11::toml11
+    Vulkan::Headers
+    vulkan-memory-allocator::vulkan-memory-allocator
 
-            ${_LIB}
-            Vulkan::Vulkan
-        )
-    endforeach()
-    foreach(_LIB ${CONAN_LIBS_DEBUG})
-        target_link_libraries(
-            inexor-vulkan-renderer
-            debug
-
-            ${_LIB}
-            Vulkan::Vulkan
-        )
-    endforeach()
-endif()
+    Vulkan::Vulkan
+)
